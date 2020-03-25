@@ -20,7 +20,18 @@ const TILE_SPACING: usize = 1;
 const WINDOW_WIDTH: usize = TILE_SIZE * FIELD_WIDTH + TILE_SPACING * (FIELD_WIDTH - 1) + FIELD_OFFSET * 2;
 const WINDOW_HEIGHT: usize = TILE_SIZE * FIELD_HEIGHT + TILE_SPACING * (FIELD_HEIGHT - 1) + FIELD_OFFSET * 2;
 
+const COLOR_EMPTY: Color = graphics::WHITE;
+
 fn main() {
+    //TODO:
+    //- Sound
+    //- Icon
+    //- Score berechnen und anzeigen (siehe score())
+    //- Refactoring
+    //- Spielerlebnis: (z.B.: hard_drop und line removal schoener darstallen)
+    //- Game over + Retry Screen
+    //- Schoenere Tiles
+
     let window_mode = WindowMode::default()
         .dimensions(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32);
     let window_setup = WindowSetup::default()
@@ -52,6 +63,12 @@ impl Point {
             x,
             y,
         }
+    }
+}
+
+impl Default for Point {
+    fn default() -> Point {
+        Point::new(0,0)
     }
 }
 
@@ -136,35 +153,159 @@ struct GameState {
 	current: Tetrimino,
     map: [Color; FIELD_TILE_COUNT],
     timer: Duration,
+    score: usize,
 }
 
 impl GameState {
     pub fn new(_ctx: &mut Context) -> GameState {
         GameState {
             current: Tetrimino::new_random(),
-            map: [graphics::WHITE; FIELD_TILE_COUNT],
+            map: [COLOR_EMPTY; FIELD_TILE_COUNT],
             timer: Duration::default(),
+            score: 0,
         }
     }
 
     fn rotate(&mut self) {
+        let center = match self.current.center {
+            Some(i) => self.current.tiles[i],
+            None => return,
+        };
 
+        // (1,0) -> (0,1)
+        // (0,1) -> (-1,0)
+        // A x = x'
+        // A = [ [0,-1], [1,0]]
+
+        let mut new_tiles = [Point::default(); 4];
+
+        for i in 0..4 {
+        	let x_old = self.current.tiles[i].x as isize;
+        	let y_old = self.current.tiles[i].y as isize;
+
+		let cx = center.x as isize;
+        	let cy = center.y as isize;
+
+		let x = cx - (y_old - cy);
+		let y = cy + (x_old - cx);
+
+		if self.collision(x, y) {
+    			return;
+		}
+
+		new_tiles[i] = Point::new(x as usize, y as usize);
+        }
+
+        self.current.tiles = new_tiles;
+    }
+
+    fn mov(&mut self, x_off: isize, y_off: isize) -> bool {
+        let mut new_tiles = [Point::default(); 4];
+
+        for i in 0..4 {
+        	let x = self.current.tiles[i].x as isize + x_off;
+        	let y = self.current.tiles[i].y as isize + y_off;
+
+		if self.collision(x, y) {
+    			return true;
+		}
+
+		new_tiles[i] = Point::new(x as usize, y as usize);
+        }
+
+        self.current.tiles = new_tiles;
+        false
     }
 
     fn left(&mut self) {
+	self.mov(-1,0);
     }
 
     fn right(&mut self) {
+        self.mov(1,0);
     }
 
     fn drop_hard(&mut self) {
-
+        while self.drop() {}
     }
 
-    fn drop(&mut self) {
+    fn drop(&mut self) -> bool {
+        if !self.mov(0,1) {
+            return true;
+        }
 
         // score - line removal
         // level
+        for &pos in self.current.tiles.iter() {
+            self.map[FIELD_WIDTH * pos.y + pos.x] = self.current.color;
+        }
+
+	self.score();
+
+        let new_tet = Tetrimino::new_random();
+
+	for &pos in new_tet.tiles.iter() {
+    		if self.collision(pos.x as isize, pos.y as isize) {
+        		//TODO
+        		panic!("YOU FOOL!");
+    		}
+        }
+
+        self.current = new_tet;
+        false
+    }
+
+    fn score(&mut self) {
+        let mut count = 0;
+        let mut lines = [0; 5];
+
+        for y in (0..FIELD_HEIGHT).rev() {
+            let mut full = true;
+            for x in 0..FIELD_WIDTH {
+                if self.map[FIELD_WIDTH * y + x] == COLOR_EMPTY {
+                    full = false;
+                    break;
+                }
+            }
+
+            if full {
+                lines[count] = y;
+                count += 1;
+            }
+        }
+
+        for i in 0..count {
+            for y in (lines[i+1]..lines[i]).rev() {
+                for x in 0..FIELD_WIDTH {
+                    self.map[FIELD_WIDTH * (y + i + 1) + x] = self.map[FIELD_WIDTH * y + x];
+                }
+            }
+        }
+
+        for y in 0..count {
+            for x in 0..FIELD_WIDTH {
+                self.map[FIELD_WIDTH * y + x] = COLOR_EMPTY;
+            }
+        }
+    }
+
+    fn collision(&mut self, x: isize, y: isize) -> bool {
+		if x < 0 || y < 0 {
+    			return true;
+		}
+
+		let x = x as usize;
+		let y = y as usize;
+
+		if x >= FIELD_WIDTH || y >= FIELD_HEIGHT {
+    			return true;
+		}
+
+		if self.map[y * FIELD_WIDTH + x] != COLOR_EMPTY {
+    			return true;
+		}
+
+		false
     }
 }
 
