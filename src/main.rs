@@ -22,7 +22,7 @@ struct Game {
 impl Game {
     pub fn new(ctx: &mut Context) -> Game {
 		let rect = Rect::new(20.0, 30.0, 50.0, 70.0);
-		let rect = Mesh::new_rectangle(ctx, DrawMode::fill(), rect, BLACK).unwrap();
+		let rect = Mesh::new_rectangle(ctx, DrawMode::fill(), rect, graphics::BLACK).unwrap();
 		
         Game {
 		    rect: rect
@@ -31,7 +31,7 @@ impl Game {
 }
 
 impl EventHandler for Game {
-    fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
+    fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
 		Ok(())
     }
 
