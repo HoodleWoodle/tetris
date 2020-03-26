@@ -3,7 +3,7 @@ use ggez::{
     mint::Point2,
     conf::{WindowMode, WindowSetup},
     event::{self, EventHandler, KeyCode, KeyMods},
-    graphics::{self, Color, DrawMode, DrawParam, Mesh, Rect, Image},
+    graphics::{self, Color, DrawParam, Rect, Image},
     audio::{Source, SoundSource},
 	Context, ContextBuilder, GameResult,
 };
@@ -18,7 +18,7 @@ use std::{
 };
 
 const FIELD_WIDTH: usize = 10;
-const FIELD_HEIGHT: usize = 20;
+const FIELD_HEIGHT: usize = 16;
 const FIELD_TILE_COUNT: usize = FIELD_WIDTH * FIELD_HEIGHT;
 const FIELD_OFFSET: usize = 2;
 
@@ -30,11 +30,9 @@ const WINDOW_HEIGHT: usize = TILE_SIZE * FIELD_HEIGHT + TILE_SPACING * (FIELD_HE
 
 fn main() {
     // TODO:
-    // - Schoenere Tiles (image)
-    // - Score berechnen und anzeigen (siehe score())
     // - Game over + Retry Screen
+
     // - Refactoring
-        // - shadowed tetrimino wo tetrimino landen würde
     // - line removal schoener darstellen
     // - Hard drop (nicht sooo hard)
     // - Soft drop
@@ -50,7 +48,7 @@ fn main() {
     let window_mode = WindowMode::default()
         .dimensions(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32);
     let window_setup = WindowSetup::default()
-        .title("Tetris")
+        .title("Tetris - Score: 0")
         .icon("/icon.png");
 
     let (mut ctx, mut event_loop) = ctx_builder
@@ -305,11 +303,11 @@ impl GameState {
         self.mov(1, 0);
     }
 
-    fn drop_hard(&mut self) {
-        while self.drop() {}
+    fn drop_hard(&mut self, ctx: &mut Context) {
+        while self.drop(ctx) {}
     }
 
-    fn drop(&mut self) -> bool {
+    fn drop(&mut self, ctx: &mut Context) -> bool {
         if !self.mov(0, 1) {
             return true;
         }
@@ -318,7 +316,7 @@ impl GameState {
             self.map[FIELD_WIDTH * pos.y + pos.x] = self.current.tile_type;
         }
 
-        self.score();
+        self.score(ctx);
 
         let new_tet = Tetrimino::new_random();
 
@@ -333,7 +331,7 @@ impl GameState {
         false
     }
 
-    fn score(&mut self) {
+    fn score(&mut self, ctx: &mut Context) {
         let mut count = 0;
         let mut lines = [0; 5];
 
@@ -366,6 +364,15 @@ impl GameState {
                 self.map[FIELD_WIDTH * y + x] = TileType::Empty;
             }
         }
+
+        if count == 0 {
+            return;
+        }
+
+        self.score += (1 << (count - 1)) * 100;
+
+        let title = String::from("Tetris - Score: ") + &self.score.to_string();
+        graphics::window(ctx).set_title(&title);
     }
 
     fn collision(&mut self, x: isize, y: isize) -> bool {
@@ -405,7 +412,7 @@ impl EventHandler for GameState {
         self.timer += timer::delta(ctx);
 
         while self.timer.as_millis() >= 500 {
-            self.drop();
+            self.drop(ctx);
             self.timer -= Duration::from_millis(500);
         }
 
@@ -430,13 +437,13 @@ impl EventHandler for GameState {
         graphics::present(ctx)
     }
 
-    fn key_down_event(&mut self, _ctx: &mut Context, keycode: KeyCode, _keymods: KeyMods, repeat: bool, ) {
+    fn key_down_event(&mut self, ctx: &mut Context, keycode: KeyCode, _keymods: KeyMods, repeat: bool, ) {
         if !repeat {
             match keycode {
                 KeyCode::Up => self.rotate(),
                 KeyCode::Left => self.left(),
                 KeyCode::Right => self.right(),
-                KeyCode::Down => self.drop_hard(),
+                KeyCode::Down => self.drop_hard(ctx),
                 _ => (),
             }
         }
