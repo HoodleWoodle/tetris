@@ -29,6 +29,12 @@ const WINDOW_HEIGHT: f32 = TILE_SIZE * ((FIELD_HEIGHT as f32) - 2.0) + FIELD_OFF
 
 fn main() {
     // TODO:
+    // - next tile
+    // - line/score/level indicator
+    // - variable speed
+    // - Random-Algorithmus
+    // - wall kicks
+
     // - Game over + Retry Screen
 
     // - Refactoring
