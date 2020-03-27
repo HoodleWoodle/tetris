@@ -18,15 +18,14 @@ use std::{
 };
 
 const FIELD_WIDTH: usize = 10;
-const FIELD_HEIGHT: usize = 16;
+const FIELD_HEIGHT: usize = 22;
 const FIELD_TILE_COUNT: usize = FIELD_WIDTH * FIELD_HEIGHT;
-const FIELD_OFFSET: usize = 2;
 
-const TILE_SIZE: usize = 32;
-const TILE_SPACING: usize = 0;
+const FIELD_OFFSET: f32 = 2.0;
+const TILE_SIZE: f32 = 32.0;
 
-const WINDOW_WIDTH: usize = TILE_SIZE * FIELD_WIDTH + TILE_SPACING * (FIELD_WIDTH - 1) + FIELD_OFFSET * 2;
-const WINDOW_HEIGHT: usize = TILE_SIZE * FIELD_HEIGHT + TILE_SPACING * (FIELD_HEIGHT - 1) + FIELD_OFFSET * 2;
+const WINDOW_WIDTH: f32 = TILE_SIZE * (FIELD_WIDTH as f32) + FIELD_OFFSET * 2.0;
+const WINDOW_HEIGHT: f32 = TILE_SIZE * ((FIELD_HEIGHT as f32) - 2.0) + FIELD_OFFSET * 2.0;
 
 fn main() {
     // TODO:
@@ -71,24 +70,6 @@ fn main() {
     }
 }
 
-#[derive(Copy, Clone)]
-struct Point {
-    x: usize,
-    y: usize,
-}
-
-impl Point {
-    fn new(x: usize, y: usize) -> Point {
-        Point { x, y }
-    }
-}
-
-impl Default for Point {
-    fn default() -> Point {
-        Point::new(0, 0)
-    }
-}
-
 #[derive(Copy, Clone, PartialEq)]
 enum TileType {
     Cyan,
@@ -101,10 +82,47 @@ enum TileType {
     Empty,
 }
 
+impl TileType {
+    fn draw(self, ctx: &mut Context, res: &Resources, pos: Point2<f32>) -> GameResult<()> {
+        if pos.y < 2.0 {
+            return Ok(());
+        }
+
+        let x = FIELD_OFFSET + pos.x * TILE_SIZE;
+        let y = FIELD_OFFSET + (pos.y - 2.0) * TILE_SIZE;
+
+        let rect = Rect::new(((self as i32) as f32) * 0.125, 0.0, 0.125, 1.0);
+        let draw_param = DrawParam::default()
+            .src(rect)
+            .dest(Point2 { x, y });
+        
+        graphics::draw(ctx, &res.image, draw_param)
+    }
+}
+
+enum Orientation {
+    Deg0,
+    Deg90,
+    Deg180,
+    Deg270,
+}
+
+impl Orientation {
+    fn rotate(&mut self, clockwise: bool) {
+        *self = match self {
+            Orientation::Deg0 => if clockwise { Orientation::Deg90 } else { Orientation::Deg270 },
+            Orientation::Deg90 => if clockwise { Orientation::Deg180 } else { Orientation::Deg0 },
+            Orientation::Deg180 => if clockwise { Orientation::Deg270 } else { Orientation::Deg90 },
+            Orientation::Deg270 => if clockwise { Orientation::Deg0 } else { Orientation::Deg180 },
+        }
+    }
+}
+
 struct Tetrimino {
-    tiles: [Point; 4],
-    center: Option<usize>,
     tile_type: TileType,
+    pos: Point2<f32>,
+    orientation: Orientation,
+    tiles: [Point2<f32>; 4],
 }
 
 impl Tetrimino {
@@ -122,108 +140,119 @@ impl Tetrimino {
 
     fn new_i() -> Tetrimino {
         Tetrimino {
-            tiles: [
-                Point::new(3, 0),
-                Point::new(4, 0),
-                Point::new(5, 0),
-                Point::new(6, 0),
-            ],
-            center: Some(1),
             tile_type: TileType::Cyan,
+            pos: Point2 { x: 4.5, y: 1.5 },
+            orientation: Orientation::Deg0,
+            tiles: [
+                Point2 { x:  1.5, y: -0.5 },
+                Point2 { x:  0.5, y: -0.5 },
+                Point2 { x: -0.5, y: -0.5 },
+                Point2 { x: -1.5, y: -0.5 },
+            ],
         }
     }
 
     fn new_o() -> Tetrimino {
         Tetrimino {
-            tiles: [
-                Point::new(4, 0),
-                Point::new(4, 1),
-                Point::new(5, 0),
-                Point::new(5, 1),
-            ],
-            center: None,
             tile_type: TileType::Yellow,
+            pos: Point2 { x: 4.5, y: 0.5 },
+            orientation: Orientation::Deg0,
+            tiles: [
+                Point2 { x: -0.5, y: -0.5 },
+                Point2 { x: -0.5, y:  0.5 },
+                Point2 { x:  0.5, y: -0.5 },
+                Point2 { x:  0.5, y:  0.5 },
+            ],
         }
     }
 
     fn new_t() -> Tetrimino {
         Tetrimino {
-            tiles: [
-                Point::new(4, 0),
-                Point::new(5, 0),
-                Point::new(5, 1),
-                Point::new(6, 0),
-            ],
-            center: Some(1),
             tile_type: TileType::Purple,
+            pos: Point2 { x: 4.0, y: 1.0 },
+            orientation: Orientation::Deg0,
+            tiles: [
+                Point2 { x: -1.0, y:  0.0 },
+                Point2 { x:  1.0, y:  0.0 },
+                Point2 { x:  0.0, y:  0.0 },
+                Point2 { x:  0.0, y: -1.0 },
+            ],
         }
     }
 
     fn new_s() -> Tetrimino {
         Tetrimino {
-            tiles: [
-                Point::new(4, 1),
-                Point::new(5, 0),
-                Point::new(5, 1),
-                Point::new(6, 0),
-            ],
-            center: Some(2),
             tile_type: TileType::Green,
+            pos: Point2 { x: 4.0, y: 1.0 },
+            orientation: Orientation::Deg0,
+            tiles: [
+                Point2 { x: -1.0, y:  0.0 },
+                Point2 { x:  0.0, y:  0.0 },
+                Point2 { x:  0.0, y: -1.0 },
+                Point2 { x:  1.0, y: -1.0 },
+            ],
         }
     }
 
     fn new_z() -> Tetrimino {
         Tetrimino {
-            tiles: [
-                Point::new(4, 0),
-                Point::new(5, 0),
-                Point::new(5, 1),
-                Point::new(6, 1),
-            ],
-            center: Some(2),
             tile_type: TileType::Red,
+            pos: Point2 { x: 4.0, y: 1.0 },
+            orientation: Orientation::Deg0,
+            tiles: [
+                Point2 { x: -1.0, y: -1.0 },
+                Point2 { x:  0.0, y:  0.0 },
+                Point2 { x:  0.0, y: -1.0 },
+                Point2 { x:  1.0, y:  0.0 },
+            ],
         }
     }
 
     fn new_j() -> Tetrimino {
         Tetrimino {
-            tiles: [
-                Point::new(4, 0),
-                Point::new(5, 0),
-                Point::new(6, 0),
-                Point::new(6, 1),
-            ],
-            center: Some(1),
             tile_type: TileType::Blue,
+            pos: Point2 { x: 4.0, y: 1.0 },
+            orientation: Orientation::Deg0,
+            tiles: [
+                Point2 { x:  0.0, y:  0.0 },
+                Point2 { x: -1.0, y:  0.0 },
+                Point2 { x:  1.0, y:  0.0 },
+                Point2 { x: -1.0, y: -1.0 },
+            ],
         }
     }
 
     fn new_l() -> Tetrimino {
         Tetrimino {
-            tiles: [
-                Point::new(4, 0),
-                Point::new(4, 1),
-                Point::new(5, 0),
-                Point::new(6, 0),
-            ],
-            center: Some(2),
             tile_type: TileType::Orange,
+            pos: Point2 { x: 4.0, y: 1.0 },
+            orientation: Orientation::Deg0,
+            tiles: [
+                Point2 { x:  0.0, y:  0.0 },
+                Point2 { x: -1.0, y:  0.0 },
+                Point2 { x:  1.0, y:  0.0 },
+                Point2 { x:  1.0, y: -1.0 },
+            ],
         }
+    }
+
+    fn draw(&self, ctx: &mut Context, res: &Resources) -> GameResult<()> {
+        for &pos in self.tiles.iter() {
+            let final_pos = Point2 { x: (self.pos.x + pos.x), y: (self.pos.y + pos.y) };
+            self.tile_type.draw(ctx, res, final_pos)?;
+        }
+
+        Ok(())
     }
 }
 
-struct GameState {
+struct Resources {
     _sound: Source,
     image: Image,
-
-    current: Tetrimino,
-    map: [TileType; FIELD_TILE_COUNT],
-    timer: Duration,
-    score: usize,
 }
 
-impl GameState {
-    pub fn new(ctx: &mut Context) -> GameResult<GameState> {
+impl Resources {
+    fn new(ctx: &mut Context) -> GameResult<Resources> {
         let mut _sound = Source::new(ctx, Path::new("/sound.ogg"))?;
         _sound.set_repeat(true);
         _sound.set_volume(0.025);
@@ -231,107 +260,127 @@ impl GameState {
 
         let image = Image::new(ctx, Path::new("/tiles.png"))?;
 
-        let state = GameState {
+        let res = Resources {
             _sound,
             image,
+        };
 
-            current: Tetrimino::new_random(),
-            map: [TileType::Empty; FIELD_TILE_COUNT],
+        Ok(res)
+    }
+}
+
+struct GameState {
+    res: Resources,
+    timer: Duration,
+    instance: GameInstance
+}
+
+impl GameState {
+    pub fn new(ctx: &mut Context) -> GameResult<GameState> {
+        let state = GameState {
+            res: Resources::new(ctx)?,
+            
             timer: Duration::default(),
-            score: 0,
+            instance: GameInstance::new(),
         };
 
         Ok(state)
     }
+}
 
-    fn rotate(&mut self) {
-        let center = match self.current.center {
-            Some(i) => self.current.tiles[i],
-            None => return,
-        };
+struct GameInstance {
+    current: Tetrimino,
+    map: [TileType; FIELD_TILE_COUNT],
+    score: usize,
+}
 
+impl GameInstance {
+    pub fn new() -> GameInstance {
+        GameInstance {
+            current: Tetrimino::new_random(),
+            map: [TileType::Empty; FIELD_TILE_COUNT],
+            score: 0,
+        }
+    }
+
+    fn rotate(&mut self, clockwise: bool) {
+        // clockwise rotation
         // (1,0) -> (0,1)
         // (0,1) -> (-1,0)
         // A x = x'
         // A = [ [0,-1], [1,0]]
 
-        let mut new_tiles = [Point::default(); 4];
+        let mut new_tiles = [Point2 { x: 0.0, y: 0.0 }; 4];
 
         for i in 0..4 {
-            let x_old = self.current.tiles[i].x as isize;
-            let y_old = self.current.tiles[i].y as isize;
+            let mut x = self.current.tiles[i].y;
+            let mut y = -self.current.tiles[i].x;
 
-            let cx = center.x as isize;
-            let cy = center.y as isize;
-
-            let x = cx - (y_old - cy);
-            let y = cy + (x_old - cx);
-
-            if self.collision(x, y) {
-                return;
+            if clockwise {
+                x = -x;
+                y = -y;
             }
 
-            new_tiles[i] = Point::new(x as usize, y as usize);
+            new_tiles[i] = Point2 { x, y };
+        }
+
+        if self.collision(&self.current.pos, &new_tiles, 0.0, 0.0) {
+            return;
         }
 
         self.current.tiles = new_tiles;
+        self.current.orientation.rotate(clockwise);
     }
 
-    fn mov(&mut self, x_off: isize, y_off: isize) -> bool {
-        let mut new_tiles = [Point::default(); 4];
-
-        for i in 0..4 {
-            let x = self.current.tiles[i].x as isize + x_off;
-            let y = self.current.tiles[i].y as isize + y_off;
-
-            if self.collision(x, y) {
-                return true;
-            }
-
-            new_tiles[i] = Point::new(x as usize, y as usize);
+    fn mov(&mut self, x_off: f32, y_off: f32) -> bool {
+        if self.collision(&self.current.pos, &self.current.tiles, x_off, y_off) {
+            return true;
         }
+        
+        self.current.pos.x += x_off;
+        self.current.pos.y += y_off;
 
-        self.current.tiles = new_tiles;
         false
     }
 
     fn left(&mut self) {
-        self.mov(-1, 0);
+        self.mov(-1.0, 0.0);
     }
 
     fn right(&mut self) {
-        self.mov(1, 0);
+        self.mov(1.0, 0.0);
     }
 
-    fn drop_hard(&mut self, ctx: &mut Context) {
-        while self.drop(ctx) {}
-    }
-
-    fn drop(&mut self, ctx: &mut Context) -> bool {
-        if !self.mov(0, 1) {
+    fn drop(&mut self) -> bool {
+        if !self.mov(0.0, 1.0) {
             return true;
         }
 
         for &pos in self.current.tiles.iter() {
-            self.map[FIELD_WIDTH * pos.y + pos.x] = self.current.tile_type;
+            let x = (self.current.pos.x + pos.x).round() as usize;
+            let y = (self.current.pos.y + pos.y).round() as usize;
+
+            self.map[FIELD_WIDTH * y + x] = self.current.tile_type;
         }
 
-        self.score(ctx);
+        self.score();
 
         let new_tet = Tetrimino::new_random();
-
-        for &pos in new_tet.tiles.iter() {
-            if self.collision(pos.x as isize, pos.y as isize) {
-                // TODO
-                panic!("YOU FOOL!");
-            }
+        
+        if self.collision(&new_tet.pos, &new_tet.tiles, 0.0, 0.0) {
+            // TODO
+            panic!("YOU FOOL!");
         }
 
         self.current = new_tet;
         false
     }
 
-    fn score(&mut self, ctx: &mut Context) {
+    fn drop_hard(&mut self) {
+        while self.drop() {}
+    }
+
+    fn score(&mut self) {
         let mut count = 0;
         let mut lines = [0; 5];
 
@@ -370,40 +419,36 @@ impl GameState {
         }
 
         self.score += (1 << (count - 1)) * 100;
-
-        let title = String::from("Tetris - Score: ") + &self.score.to_string();
-        graphics::window(ctx).set_title(&title);
     }
 
-    fn collision(&mut self, x: isize, y: isize) -> bool {
-        if x < 0 || y < 0 {
-            return true;
-        }
+    fn collision(&self, pos: &Point2<f32>, tiles: &[Point2<f32>; 4], x_off: f32, y_off: f32) -> bool {
+        for tile in tiles {
+            let x = (pos.x + tile.x + x_off).round() as usize;
+            let y = (pos.y + tile.y + y_off).round() as usize;
+    
+            // (x < 0 || y < 0) is tested within next check because of usize wrap-around
 
-        let x = x as usize;
-        let y = y as usize;
+            if x >= FIELD_WIDTH || y >= FIELD_HEIGHT {
+                return true;
+            }
 
-        if x >= FIELD_WIDTH || y >= FIELD_HEIGHT {
-            return true;
-        }
-
-        if self.map[y * FIELD_WIDTH + x] != TileType::Empty {
-            return true;
+            if self.map[y * FIELD_WIDTH + x] != TileType::Empty {
+                return true;
+            }
         }
 
         false
     }
 
-    fn draw_tile(&self, ctx: &mut Context, pos: Point, tile_type: TileType) -> GameResult<()> {
-        let x = (FIELD_OFFSET + pos.x * (TILE_SIZE + TILE_SPACING)) as f32;
-        let y = (FIELD_OFFSET + pos.y * (TILE_SIZE + TILE_SPACING)) as f32;
+    fn draw(&self, ctx: &mut Context, res: &Resources) -> GameResult<()> {
+        for y in 0..FIELD_HEIGHT {
+            for x in 0..FIELD_WIDTH {
+                let pos: Point2<f32>  = Point2 { x: x as f32, y: y as f32 };
+                self.map[y * FIELD_WIDTH + x].draw(ctx, res, pos)?;
+            }
+        }
 
-        let rect = Rect::new(((tile_type as i32) as f32) * 0.125, 0.0, 0.125, 1.0);
-        let draw_param = DrawParam::default()
-            .src(rect)
-            .dest(Point2 { x, y });
-        
-        graphics::draw(ctx, &self.image, draw_param)
+        self.current.draw(ctx, res)
     }
 }
 
@@ -412,7 +457,7 @@ impl EventHandler for GameState {
         self.timer += timer::delta(ctx);
 
         while self.timer.as_millis() >= 500 {
-            self.drop(ctx);
+            self.instance.drop();
             self.timer -= Duration::from_millis(500);
         }
 
@@ -423,27 +468,20 @@ impl EventHandler for GameState {
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, Color::new(0.75, 0.75, 0.75, 1.0));
 
-        for y in 0..FIELD_HEIGHT {
-            for x in 0..FIELD_WIDTH {
-                let pos = Point { x, y };
-                self.draw_tile(ctx, pos, self.map[y * FIELD_WIDTH + x])?;
-            }
-        }
-
-        for &pos in self.current.tiles.iter() {
-            self.draw_tile(ctx, pos, self.current.tile_type)?;
-        }
+        self.instance.draw(ctx, &self.res)?;
+        let title = String::from("Tetris - Score: ") + &self.instance.score.to_string();
+        graphics::window(ctx).set_title(&title);
 
         graphics::present(ctx)
     }
 
-    fn key_down_event(&mut self, ctx: &mut Context, keycode: KeyCode, _keymods: KeyMods, repeat: bool, ) {
+    fn key_down_event(&mut self, _ctx: &mut Context, keycode: KeyCode, _keymods: KeyMods, repeat: bool, ) {
         if !repeat {
             match keycode {
-                KeyCode::Up => self.rotate(),
-                KeyCode::Left => self.left(),
-                KeyCode::Right => self.right(),
-                KeyCode::Down => self.drop_hard(ctx),
+                KeyCode::Up => self.instance.rotate(true),
+                KeyCode::Left => self.instance.left(),
+                KeyCode::Right => self.instance.right(),
+                KeyCode::Down => self.instance.drop_hard(),
                 _ => (),
             }
         }
