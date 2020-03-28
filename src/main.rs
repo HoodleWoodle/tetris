@@ -7,40 +7,105 @@ use ggez::{
     audio::{Source, SoundSource},
 	Context, ContextBuilder, GameResult,
 };
-use rand::{self, Rng};
+use rand::{
+    rngs::StdRng,
+    RngCore, SeedableRng,
+};
 use std::{
     process,
     cmp::PartialEq,
-    time::Duration,
     path::Path,
+    hash::{Hash, Hasher},
+    collections::hash_map::DefaultHasher,
+    time::{Duration, SystemTime},
     env,
     path,
 };
 
-const FIELD_WIDTH: usize = 10;
-const FIELD_HEIGHT: usize = 22;
-const FIELD_TILE_COUNT: usize = FIELD_WIDTH * FIELD_HEIGHT;
+const MAP_WIDTH: usize = 10;
+const MAP_HEIGHT: usize = 22;
+const MAP_TILE_COUNT: usize = MAP_WIDTH * MAP_HEIGHT;
 
-const FIELD_OFFSET: f32 = 2.0;
+const MAP_OFFSET: f32 = 2.0;
 const TILE_SIZE: f32 = 32.0;
 
-const WINDOW_WIDTH: f32 = TILE_SIZE * (FIELD_WIDTH as f32) + FIELD_OFFSET * 2.0;
-const WINDOW_HEIGHT: f32 = TILE_SIZE * ((FIELD_HEIGHT as f32) - 2.0) + FIELD_OFFSET * 2.0;
+const WINDOW_WIDTH: f32 = TILE_SIZE * (MAP_WIDTH as f32) + MAP_OFFSET * 2.0;
+const WINDOW_HEIGHT: f32 = TILE_SIZE * ((MAP_HEIGHT as f32) - 2.0) + MAP_OFFSET * 2.0;
+
+const WALL_KICK_DATA_TSZJL: [[[(f32, f32); 5]; 4]; 2] = [
+    [
+        // Deg0 >> Deg90
+        [( 0.0, 0.0), (-1.0, 0.0), (-1.0, 1.0), ( 0.0,-2.0), (-1.0,-2.0)],
+        // Deg90 >> Deg180
+        [( 0.0, 0.0), ( 1.0, 0.0), ( 1.0,-1.0), ( 0.0, 2.0), ( 1.0, 2.0)],
+        // Deg180 >> Deg270
+        [( 0.0, 0.0), ( 1.0, 0.0), ( 1.0, 1.0), ( 0.0,-2.0), ( 1.0,-2.0)],
+        // Deg270 >> Deg0
+        [( 0.0, 0.0), (-1.0, 0.0), (-1.0,-1.0), ( 0.0, 2.0), (-1.0, 2.0)],
+    ],
+    [
+        // Deg90 >> Deg0
+        [(0.0, 0.0), ( 1.0, 0.0), ( 1.0,-1.0), ( 0.0, 2.0), ( 1.0, 2.0)],
+        // Deg180 >> Deg90
+        [(0.0, 0.0), (-1.0, 0.0), (-1.0, 1.0), ( 0.0,-2.0), (-1.0,-2.0)],
+        // Deg270 >> Deg180
+        [(0.0, 0.0), (-1.0, 0.0), (-1.0,-1.0), ( 0.0, 2.0), (-1.0, 2.0)],
+        // Deg0 >> Deg270
+        [(0.0, 0.0), ( 1.0, 0.0), ( 1.0, 1.0), ( 0.0,-2.0), ( 1.0,-2.0)],
+    ],
+];
+
+const WALL_KICK_DATA_I: [[[(f32, f32); 5]; 4]; 2] = [
+    [
+        // Deg0 >> Deg90
+        [( 0.0, 0.0), (-2.0, 0.0), ( 1.0, 0.0), (-2.0,-1.0), ( 1.0, 2.0)],
+        // Deg90 >> Deg180
+        [( 0.0, 0.0), (-1.0, 0.0), ( 2.0, 0.0), (-1.0, 2.0), ( 2.0,-1.0)],
+        // Deg180 >> Deg270
+        [( 0.0, 0.0), ( 2.0, 0.0), (-1.0, 0.0), ( 2.0, 1.0), (-1.0,-2.0)],
+        // Deg270 >> Deg0
+        [( 0.0, 0.0), ( 1.0, 0.0), (-2.0, 0.0), ( 1.0,-2.0), (-2.0, 1.0)],
+    ],
+    [
+        // Deg90 >> Deg0
+        [( 0.0, 0.0), ( 2.0, 0.0), (-1.0, 0.0), ( 2.0, 1.0), (-1.0,-2.0)],
+        // Deg180 >> Deg90
+        [( 0.0, 0.0), ( 1.0, 0.0), (-2.0, 0.0), ( 1.0,-2.0), (-2.0, 1.0)],
+        // Deg270 >> Deg180
+        [( 0.0, 0.0), (-2.0, 0.0), ( 1.0, 0.0), (-2.0,-1.0), ( 1.0, 2.0)],
+        // Deg0 >> Deg270
+        [( 0.0, 0.0), (-1.0, 0.0), ( 2.0, 0.0), (-1.0, 2.0), ( 2.0,-1.0)],
+    ],
+];
 
 fn main() {
     // TODO:
     // - next tile
-    // - line/score/level indicator
+    // - line, score, level indicator
+
+    // TO TIME:
     // - variable speed
-    // - Random-Algorithmus
-    // - wall kicks
-
-    // - Game over + Retry Screen
-
-    // - Refactoring
     // - line removal schoener darstellen
-    // - Hard drop (nicht sooo hard)
-    // - Soft drop
+    // - soft drop
+    // - hard drop
+    // - game over + retry screen
+
+    // OPTIONAL:
+    // - max out above 999999
+    // - shadowing
+    // - hold piece
+    // - texture pack change (lvl) (s. SETTINGS)
+
+    // BUGS & FIXES & ...:
+    // - quirin´s line problem
+    // - save generators history locally (only one generator)
+    // - window scaling based on monitor (correct texture scaling)
+
+    // SETTINGS:
+    // - OPTIONALS
+    // - Sound on/off, volume
+    // - texture pack (s. OPTIONAL)
+    // - type of RandomGenerator
 
     let mut ctx_builder = ContextBuilder::new("tetris", "");
 
@@ -53,7 +118,7 @@ fn main() {
     let window_mode = WindowMode::default()
         .dimensions(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32);
     let window_setup = WindowSetup::default()
-        .title("Tetris - Score: 0")
+        .title("Tetris")
         .icon("/icon.png");
 
     let (mut ctx, mut event_loop) = ctx_builder
@@ -72,19 +137,19 @@ fn main() {
 
     match event::run(&mut ctx, &mut event_loop, &mut state) {
         Ok(_) => println!("Exited cleanly."),
-        Err(e) => eprintln!("Error occured: {}", e),
+        Err(e) => eprintln!("Error occuZ: {}", e),
     }
 }
 
 #[derive(Copy, Clone, PartialEq)]
 enum TileType {
-    Cyan,
-    Yellow,
-    Purple,
-    Green,
-    Red,
-    Blue,
-    Orange,
+    I,
+    O,
+    T,
+    S,
+    Z,
+    J,
+    L,
     Empty,
 }
 
@@ -94,8 +159,8 @@ impl TileType {
             return Ok(());
         }
 
-        let x = FIELD_OFFSET + pos.x * TILE_SIZE;
-        let y = FIELD_OFFSET + (pos.y - 2.0) * TILE_SIZE;
+        let x = MAP_OFFSET + pos.x * TILE_SIZE;
+        let y = MAP_OFFSET + (pos.y - 2.0) * TILE_SIZE;
 
         let rect = Rect::new(((self as i32) as f32) * 0.125, 0.0, 0.125, 1.0);
         let draw_param = DrawParam::default()
@@ -106,6 +171,47 @@ impl TileType {
     }
 }
 
+struct RandomGenerator {
+    rng: StdRng,
+    types: Vec<TileType>,
+}
+
+impl RandomGenerator {
+    fn new(seed: [u8; 32]) -> RandomGenerator {
+        let generator = RandomGenerator {
+            rng: StdRng::from_seed(seed),
+            types: Vec::with_capacity(7),
+        };
+
+        generator
+    }
+
+    fn next(&mut self) -> TileType {
+        let mut len = self.types.len();
+
+        if len == 0 {
+            self.types.extend_from_slice(&[
+                TileType::I,
+                TileType::O,
+                TileType::T,
+                TileType::S,
+                TileType::Z,
+                TileType::J,
+                TileType::L,
+            ]);
+            len = 7;
+        }
+
+        if len == 1 {
+            return self.types.pop().unwrap();
+        }
+
+        let value = (self.rng.next_u32() as usize) % len;
+        self.types.swap_remove(value)
+    } 
+}
+
+#[derive(Copy, Clone)]
 enum Orientation {
     Deg0,
     Deg90,
@@ -114,8 +220,8 @@ enum Orientation {
 }
 
 impl Orientation {
-    fn rotate(&mut self, clockwise: bool) {
-        *self = match self {
+    fn rotate(&self, clockwise: bool) -> Orientation {
+        match self {
             Orientation::Deg0 => if clockwise { Orientation::Deg90 } else { Orientation::Deg270 },
             Orientation::Deg90 => if clockwise { Orientation::Deg180 } else { Orientation::Deg0 },
             Orientation::Deg180 => if clockwise { Orientation::Deg270 } else { Orientation::Deg90 },
@@ -132,21 +238,22 @@ struct Tetrimino {
 }
 
 impl Tetrimino {
-    fn new_random() -> Tetrimino {
-        match rand::thread_rng().gen_range(0, 7) {
-            0 => Tetrimino::new_i(),
-            1 => Tetrimino::new_o(),
-            2 => Tetrimino::new_t(),
-            3 => Tetrimino::new_s(),
-            4 => Tetrimino::new_z(),
-            5 => Tetrimino::new_j(),
-            _ => Tetrimino::new_l(),
+    fn new(tile_type: TileType) -> Tetrimino {
+        match tile_type {
+            TileType::I => Tetrimino::new_i(),
+            TileType::O => Tetrimino::new_o(),
+            TileType::T => Tetrimino::new_t(),
+            TileType::S => Tetrimino::new_s(),
+            TileType::Z => Tetrimino::new_z(),
+            TileType::J => Tetrimino::new_j(),
+            TileType::L => Tetrimino::new_l(),
+            _ => panic!("dead code"),
         }
     }
 
     fn new_i() -> Tetrimino {
         Tetrimino {
-            tile_type: TileType::Cyan,
+            tile_type: TileType::I,
             pos: Point2 { x: 4.5, y: 1.5 },
             orientation: Orientation::Deg0,
             tiles: [
@@ -160,7 +267,7 @@ impl Tetrimino {
 
     fn new_o() -> Tetrimino {
         Tetrimino {
-            tile_type: TileType::Yellow,
+            tile_type: TileType::O,
             pos: Point2 { x: 4.5, y: 0.5 },
             orientation: Orientation::Deg0,
             tiles: [
@@ -174,7 +281,7 @@ impl Tetrimino {
 
     fn new_t() -> Tetrimino {
         Tetrimino {
-            tile_type: TileType::Purple,
+            tile_type: TileType::T,
             pos: Point2 { x: 4.0, y: 1.0 },
             orientation: Orientation::Deg0,
             tiles: [
@@ -188,7 +295,7 @@ impl Tetrimino {
 
     fn new_s() -> Tetrimino {
         Tetrimino {
-            tile_type: TileType::Green,
+            tile_type: TileType::S,
             pos: Point2 { x: 4.0, y: 1.0 },
             orientation: Orientation::Deg0,
             tiles: [
@@ -202,7 +309,7 @@ impl Tetrimino {
 
     fn new_z() -> Tetrimino {
         Tetrimino {
-            tile_type: TileType::Red,
+            tile_type: TileType::Z,
             pos: Point2 { x: 4.0, y: 1.0 },
             orientation: Orientation::Deg0,
             tiles: [
@@ -216,7 +323,7 @@ impl Tetrimino {
 
     fn new_j() -> Tetrimino {
         Tetrimino {
-            tile_type: TileType::Blue,
+            tile_type: TileType::J,
             pos: Point2 { x: 4.0, y: 1.0 },
             orientation: Orientation::Deg0,
             tiles: [
@@ -230,7 +337,7 @@ impl Tetrimino {
 
     fn new_l() -> Tetrimino {
         Tetrimino {
-            tile_type: TileType::Orange,
+            tile_type: TileType::L,
             pos: Point2 { x: 4.0, y: 1.0 },
             orientation: Orientation::Deg0,
             tiles: [
@@ -240,6 +347,94 @@ impl Tetrimino {
                 Point2 { x:  1.0, y: -1.0 },
             ],
         }
+    }
+
+    fn mov(&mut self, map: &[TileType; MAP_TILE_COUNT], x_off: f32, y_off: f32) -> bool {
+        self.pos.x += x_off;
+        self.pos.y += y_off;
+    
+        if self.collision(map)
+        {
+            self.pos.x -= x_off;
+            self.pos.y -= y_off;
+            return false;
+        }
+    
+        true
+    }
+
+    fn rotate(&mut self, map: &[TileType; MAP_TILE_COUNT], clockwise: bool) -> bool {
+        if self.tile_type == TileType::O {
+            return true;
+        }
+
+        let mut new_tet = Tetrimino {
+            tile_type: self.tile_type,
+            pos: self.pos,
+            orientation: self.orientation.rotate(clockwise),
+            tiles: [Point2 { x: 0.0, y: 0.0 }; 4],
+        };
+
+        for i in 0..4 {
+            // clockwise rotation
+            // (1,0) -> (0,1)
+            // (0,1) -> (-1,0)
+            // A x = x'
+            // A = [ [0,-1], [1,0]]
+
+            let mut x = self.tiles[i].y;
+            let mut y = -self.tiles[i].x;
+
+            if clockwise {
+                x = -x;
+                y = -y;
+            }
+
+            new_tet.tiles[i] = Point2 { x, y };
+        }
+
+        if new_tet.collision(map) {
+            // wall kicks
+            let rotation_direction_index = if clockwise { 0 } else { 1 };
+            let orientation_index = self.orientation as usize;
+
+            let data = if self.tile_type == TileType::I {
+                &WALL_KICK_DATA_I[rotation_direction_index][orientation_index]
+            } else {
+                &WALL_KICK_DATA_TSZJL[rotation_direction_index][orientation_index]
+            };
+
+            for i in 0..5 {
+                if new_tet.mov(map, data[i].0, data[i].1) {
+                    *self = new_tet;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        *self = new_tet;
+        true
+    }
+
+    fn collision(&self, map: &[TileType; MAP_TILE_COUNT]) -> bool {
+        for &tile in self.tiles.iter() {
+            let x = (self.pos.x + tile.x).round() as usize;
+            let y = (self.pos.y + tile.y).round() as usize;
+    
+            // (x < 0 || y < 0) is tested within next check because of usize wrap-around
+
+            if x >= MAP_WIDTH || y >= MAP_HEIGHT {
+                return true;
+            }
+
+            if map[y * MAP_WIDTH + x] != TileType::Empty {
+                return true;
+            }
+        }
+
+        false
     }
 
     fn draw(&self, ctx: &mut Context, res: &Resources) -> GameResult<()> {
@@ -277,76 +472,83 @@ impl Resources {
 
 struct GameState {
     res: Resources,
+    
     timer: Duration,
     instance: GameInstance
 }
 
 impl GameState {
-    pub fn new(ctx: &mut Context) -> GameResult<GameState> {
+    fn new(ctx: &mut Context) -> GameResult<GameState> {
+        let seed = GameState::generate_seed();
+
         let state = GameState {
             res: Resources::new(ctx)?,
             
             timer: Duration::default(),
-            instance: GameInstance::new(),
+            instance: GameInstance::new("Player 1".to_owned(), seed),
         };
 
         Ok(state)
     }
+
+    fn generate_seed() -> [u8; 32] {
+        let mut seed: [u8; 32] = [0; 32];
+
+        for i in 0..4 {
+            let mut hasher = DefaultHasher::new();
+            SystemTime::now().hash(&mut hasher);
+            let hash = hasher.finish();
+
+            for j in 0..8 {
+                seed[i * 8 + j] = ((hash >> (j << 3)) & 0xFF) as u8;
+            }
+        }
+
+        seed
+    }
 }
 
 struct GameInstance {
+    player: String,
+
+    gen: RandomGenerator,
+
+    map: [TileType; MAP_TILE_COUNT],
     current: Tetrimino,
-    map: [TileType; FIELD_TILE_COUNT],
+    next: TileType,
+
     score: usize,
+    lines: usize,
+    level: usize,
 }
 
 impl GameInstance {
-    pub fn new() -> GameInstance {
+    pub fn new(player: String, seed: [u8; 32]) -> GameInstance {
+        let mut gen = RandomGenerator::new(seed);
+        let current = Tetrimino::new(gen.next());
+        let next = gen.next();
+
         GameInstance {
-            current: Tetrimino::new_random(),
-            map: [TileType::Empty; FIELD_TILE_COUNT],
+            player,
+
+            gen,
+
+            map: [TileType::Empty; MAP_TILE_COUNT],
+            current,
+            next,
+
             score: 0,
+            lines: 0,
+            level: 0,
         }
     }
 
     fn rotate(&mut self, clockwise: bool) {
-        // clockwise rotation
-        // (1,0) -> (0,1)
-        // (0,1) -> (-1,0)
-        // A x = x'
-        // A = [ [0,-1], [1,0]]
-
-        let mut new_tiles = [Point2 { x: 0.0, y: 0.0 }; 4];
-
-        for i in 0..4 {
-            let mut x = self.current.tiles[i].y;
-            let mut y = -self.current.tiles[i].x;
-
-            if clockwise {
-                x = -x;
-                y = -y;
-            }
-
-            new_tiles[i] = Point2 { x, y };
-        }
-
-        if self.collision(&self.current.pos, &new_tiles, 0.0, 0.0) {
-            return;
-        }
-
-        self.current.tiles = new_tiles;
-        self.current.orientation.rotate(clockwise);
+        self.current.rotate(&self.map, clockwise);
     }
 
     fn mov(&mut self, x_off: f32, y_off: f32) -> bool {
-        if self.collision(&self.current.pos, &self.current.tiles, x_off, y_off) {
-            return true;
-        }
-        
-        self.current.pos.x += x_off;
-        self.current.pos.y += y_off;
-
-        false
+        self.current.mov(&self.map, x_off, y_off)
     }
 
     fn left(&mut self) {
@@ -358,7 +560,7 @@ impl GameInstance {
     }
 
     fn drop(&mut self) -> bool {
-        if !self.mov(0.0, 1.0) {
+        if self.mov(0.0, 1.0) {
             return true;
         }
 
@@ -366,16 +568,18 @@ impl GameInstance {
             let x = (self.current.pos.x + pos.x).round() as usize;
             let y = (self.current.pos.y + pos.y).round() as usize;
 
-            self.map[FIELD_WIDTH * y + x] = self.current.tile_type;
+            self.map[MAP_WIDTH * y + x] = self.current.tile_type;
         }
 
-        self.score();
+        let complete_lines = self.cleanup_map();
+        self.update_score(complete_lines);
 
-        let new_tet = Tetrimino::new_random();
+        let new_tet = Tetrimino::new(self.next);
+        self.next = self.gen.next();
         
-        if self.collision(&new_tet.pos, &new_tet.tiles, 0.0, 0.0) {
+        if new_tet.collision(&self.map) {
             // TODO
-            panic!("YOU FOOL!");
+            panic!("Score: {}", self.score);
         }
 
         self.current = new_tet;
@@ -386,75 +590,77 @@ impl GameInstance {
         while self.drop() {}
     }
 
-    fn score(&mut self) {
+    fn cleanup_map(&mut self) -> usize {
         let mut count = 0;
         let mut lines = [0; 5];
 
-        for y in (0..FIELD_HEIGHT).rev() {
-            let mut full = true;
+        // count complete lines
+        for y in (0..MAP_HEIGHT).rev() {
+            let mut complete = true;
 
-            for x in 0..FIELD_WIDTH {
-                if self.map[FIELD_WIDTH * y + x] == TileType::Empty {
-                    full = false;
+            for x in 0..MAP_WIDTH {
+                if self.map[MAP_WIDTH * y + x] == TileType::Empty {
+                    complete = false;
                     break;
                 }
             }
 
-            if full {
+            if complete {
                 lines[count] = y;
                 count += 1;
             }
         }
 
+        // remove complete lines
         for i in 0..count {
             for y in (lines[i + 1]..lines[i]).rev() {
-                for x in 0..FIELD_WIDTH {
-                    self.map[FIELD_WIDTH * (y + i + 1) + x] = self.map[FIELD_WIDTH * y + x];
+                for x in 0..MAP_WIDTH {
+                    self.map[MAP_WIDTH * (y + i + 1) + x] = self.map[MAP_WIDTH * y + x];
                 }
             }
         }
 
         for y in 0..count {
-            for x in 0..FIELD_WIDTH {
-                self.map[FIELD_WIDTH * y + x] = TileType::Empty;
+            for x in 0..MAP_WIDTH {
+                self.map[MAP_WIDTH * y + x] = TileType::Empty;
             }
         }
 
-        if count == 0 {
+        count
+    }
+
+    fn update_score(&mut self, complete_lines: usize) {
+        if complete_lines == 0 {
             return;
         }
 
-        self.score += (1 << (count - 1)) * 100;
-    }
+        self.lines += complete_lines;
+        self.level = self.lines / 10;
 
-    fn collision(&self, pos: &Point2<f32>, tiles: &[Point2<f32>; 4], x_off: f32, y_off: f32) -> bool {
-        for tile in tiles {
-            let x = (pos.x + tile.x + x_off).round() as usize;
-            let y = (pos.y + tile.y + y_off).round() as usize;
-    
-            // (x < 0 || y < 0) is tested within next check because of usize wrap-around
-
-            if x >= FIELD_WIDTH || y >= FIELD_HEIGHT {
-                return true;
-            }
-
-            if self.map[y * FIELD_WIDTH + x] != TileType::Empty {
-                return true;
-            }
-        }
-
-        false
+        let factor = match complete_lines {
+            1 => 40,
+            2 => 100,
+            3 => 300,
+            4 => 1200,
+            _ => panic!("dead code"),
+        };
+        self.score += factor * (self.level + 1);
     }
 
     fn draw(&self, ctx: &mut Context, res: &Resources) -> GameResult<()> {
-        for y in 0..FIELD_HEIGHT {
-            for x in 0..FIELD_WIDTH {
+        for y in 0..MAP_HEIGHT {
+            for x in 0..MAP_WIDTH {
                 let pos: Point2<f32>  = Point2 { x: x as f32, y: y as f32 };
-                self.map[y * FIELD_WIDTH + x].draw(ctx, res, pos)?;
+                self.map[y * MAP_WIDTH + x].draw(ctx, res, pos)?;
             }
         }
 
-        self.current.draw(ctx, res)
+        self.current.draw(ctx, res)?;
+        
+        let title = String::from("Tetris - Score: ") + &self.score.to_string();
+        graphics::window(ctx).set_title(&title);
+
+        Ok(())
     }
 }
 
@@ -462,9 +668,9 @@ impl EventHandler for GameState {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
         self.timer += timer::delta(ctx);
 
-        while self.timer.as_millis() >= 500 {
+        while self.timer.as_millis() >= 250 {
             self.instance.drop();
-            self.timer -= Duration::from_millis(500);
+            self.timer -= Duration::from_millis(250);
         }
 
         timer::yield_now();
@@ -475,8 +681,6 @@ impl EventHandler for GameState {
         graphics::clear(ctx, Color::new(0.75, 0.75, 0.75, 1.0));
 
         self.instance.draw(ctx, &self.res)?;
-        let title = String::from("Tetris - Score: ") + &self.instance.score.to_string();
-        graphics::window(ctx).set_title(&title);
 
         graphics::present(ctx)
     }
@@ -485,9 +689,22 @@ impl EventHandler for GameState {
         if !repeat {
             match keycode {
                 KeyCode::Up => self.instance.rotate(true),
+                KeyCode::X => self.instance.rotate(true),
+
+                KeyCode::Space => self.instance.drop_hard(),
+                //KeyCode::Down => self.instance.soft_drop(),
+
+                //KeyCode::Shift => self.instance.hold(),
+                //KeyCode::C => self.instance.hold(),
+
+                KeyCode::RControl => self.instance.rotate(false),
+                KeyCode::Y => self.instance.rotate(false),
+
+                //KeyCode::Escape => pause(),
+                //KeyCode::F1 => pause(),
+
                 KeyCode::Left => self.instance.left(),
                 KeyCode::Right => self.instance.right(),
-                KeyCode::Down => self.instance.drop_hard(),
                 _ => (),
             }
         }
