@@ -476,7 +476,7 @@ impl Tetrimino {
 }
 
 struct Resources {
-    //_sound: Source,
+    _sound: Source,
     tileset: Image,
     background: Image,
     font: Font,
@@ -484,17 +484,17 @@ struct Resources {
 
 impl Resources {
     fn new(ctx: &mut Context) -> GameResult<Resources> {
-        //let mut _sound = Source::new(ctx, Path::new("/sound.ogg"))?;
-        //_sound.set_repeat(true);
-        //_sound.set_volume(0.025);
-        //_sound.play()?;
+        let mut _sound = Source::new(ctx, Path::new("/sound.ogg"))?;
+        _sound.set_repeat(true);
+        _sound.set_volume(0.025);
+        _sound.play()?;
 
         let tileset = Image::new(ctx, Path::new("/tileset.png"))?;
         let background = Image::new(ctx, Path::new("/background.png"))?;
         let font = Font::new(ctx, Path::new("/font.ttf"))?;
 
         let res = Resources {
-            //_sound,
+            _sound,
             tileset,
             background,
             font,
