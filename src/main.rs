@@ -509,7 +509,7 @@ impl GameState {
 }
 
 struct GameInstance {
-    player: String,
+    _player: String,
 
     gen: RandomGenerator,
 
@@ -529,7 +529,7 @@ impl GameInstance {
         let next = gen.next();
 
         GameInstance {
-            player,
+            _player: player,
 
             gen,
 
