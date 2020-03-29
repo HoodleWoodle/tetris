@@ -3,9 +3,9 @@ use ggez::{
     mint::Point2,
     conf::{WindowMode, WindowSetup},
     event::{self, EventHandler, KeyCode, KeyMods},
-    graphics::{self, Color, DrawParam, Rect, Image},
+    graphics::{self, DrawParam, Rect, Image, Text, Font, Scale},
     audio::{Source, SoundSource},
-	Context, ContextBuilder, GameResult,
+    Context, ContextBuilder, GameResult,
 };
 use rand::{
     rngs::StdRng,
@@ -26,11 +26,22 @@ const MAP_WIDTH: usize = 10;
 const MAP_HEIGHT: usize = 22;
 const MAP_TILE_COUNT: usize = MAP_WIDTH * MAP_HEIGHT;
 
-const MAP_OFFSET: f32 = 2.0;
 const TILE_SIZE: f32 = 32.0;
 
-const WINDOW_WIDTH: f32 = TILE_SIZE * (MAP_WIDTH as f32) + MAP_OFFSET * 2.0;
-const WINDOW_HEIGHT: f32 = TILE_SIZE * ((MAP_HEIGHT as f32) - 2.0) + MAP_OFFSET * 2.0;
+const WINDOW_WIDTH: f32 = 586.0;
+const WINDOW_HEIGHT: f32 = 726.0;
+
+const DEFAULT_FONT_SIZE: f32 = 40.0;
+const PLAYER_FONT_SIZE: f32 = 48.0;
+
+const NEXT_TEXT_Y_OFFSET: f32 = 24.0;
+
+const PLAYER_BOUNDS: [Rect; 1] = [Rect::new(8.0, 8.0, 570.0, 60.0)];
+const SCORE_BOUNDS: [Rect; 1] = [Rect::new(8.0, 78.0, 240.0, 96.0)];
+const LINES_BOUNDS: [Rect; 1] = [Rect::new(8.0, 184.0, 240.0, 96.0)];
+const LEVEL_BOUNDS: [Rect; 1] = [Rect::new(8.0, 290.0, 240.0, 96.0)];
+const NEXT_BOUNDS: [Rect; 1] = [Rect::new(68.0, 396.0, 180.0, 200.0)];
+const MAP_BOUNDS: [Rect; 1] = [Rect::new(258.0, 78.0, MAP_WIDTH as f32 * TILE_SIZE, MAP_HEIGHT as f32 * TILE_SIZE)];
 
 const WALL_KICK_DATA_TSZJL: [[[(f32, f32); 5]; 4]; 2] = [
     [
@@ -80,29 +91,33 @@ const WALL_KICK_DATA_I: [[[(f32, f32); 5]; 4]; 2] = [
 
 fn main() {
     // TODO:
-    // - next tile
-    // - line, score, level indicator
+
+    // ADITIONAL STATES:
+    // - game over + retry screen
+    // - welcome screen
+    // - help screen
 
     // TO TIME:
     // - variable speed
     // - line removal schoener darstellen
     // - soft drop
-    // - hard drop
-    // - game over + retry screen
 
     // OPTIONAL:
+    // - hard drop
     // - max out above 999999
     // - shadowing
     // - hold piece
     // - texture pack change (lvl) (s. SETTINGS)
 
     // BUGS & FIXES & ...:
+    // - disable audio player before exit
     // - quirin´s line problem
     // - save generators history locally (only one generator)
     // - window scaling based on monitor (correct texture scaling)
 
     // SETTINGS:
     // - OPTIONALS
+    // - Load GUI offset file
     // - Sound on/off, volume
     // - texture pack (s. OPTIONAL)
     // - type of RandomGenerator
@@ -137,7 +152,7 @@ fn main() {
 
     match event::run(&mut ctx, &mut event_loop, &mut state) {
         Ok(_) => println!("Exited cleanly."),
-        Err(e) => eprintln!("Error occuZ: {}", e),
+        Err(e) => eprintln!("Error occurred: {}", e),
     }
 }
 
@@ -154,20 +169,24 @@ enum TileType {
 }
 
 impl TileType {
-    fn draw(self, ctx: &mut Context, res: &Resources, pos: Point2<f32>) -> GameResult<()> {
+    fn draw_map(self, ctx: &mut Context, res: &Resources, map_bounds: &Rect, pos: Point2<f32>) -> GameResult<()> {
         if pos.y < 2.0 {
             return Ok(());
         }
 
-        let x = MAP_OFFSET + pos.x * TILE_SIZE;
-        let y = MAP_OFFSET + (pos.y - 2.0) * TILE_SIZE;
+        let x = map_bounds.x + pos.x * TILE_SIZE;
+        let y = map_bounds.y + (pos.y - 2.0) * TILE_SIZE;
 
+        self.draw(ctx, res, Point2 { x, y })
+   }
+
+    fn draw(self, ctx: &mut Context, res: &Resources, pos: Point2<f32>) -> GameResult<()> {
         let rect = Rect::new(((self as i32) as f32) * 0.125, 0.0, 0.125, 1.0);
         let draw_param = DrawParam::default()
             .src(rect)
-            .dest(Point2 { x, y });
-        
-        graphics::draw(ctx, &res.image, draw_param)
+            .dest(pos);
+
+       graphics::draw(ctx, &res.tileset, draw_param)
     }
 }
 
@@ -208,7 +227,7 @@ impl RandomGenerator {
 
         let value = (self.rng.next_u32() as usize) % len;
         self.types.swap_remove(value)
-    } 
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -230,6 +249,7 @@ impl Orientation {
     }
 }
 
+#[derive(Clone)]
 struct Tetrimino {
     tile_type: TileType,
     pos: Point2<f32>,
@@ -352,14 +372,14 @@ impl Tetrimino {
     fn mov(&mut self, map: &[TileType; MAP_TILE_COUNT], x_off: f32, y_off: f32) -> bool {
         self.pos.x += x_off;
         self.pos.y += y_off;
-    
+
         if self.collision(map)
         {
             self.pos.x -= x_off;
             self.pos.y -= y_off;
             return false;
         }
-    
+
         true
     }
 
@@ -422,7 +442,7 @@ impl Tetrimino {
         for &tile in self.tiles.iter() {
             let x = (self.pos.x + tile.x).round() as usize;
             let y = (self.pos.y + tile.y).round() as usize;
-    
+
             // (x < 0 || y < 0) is tested within next check because of usize wrap-around
 
             if x >= MAP_WIDTH || y >= MAP_HEIGHT {
@@ -437,33 +457,47 @@ impl Tetrimino {
         false
     }
 
-    fn draw(&self, ctx: &mut Context, res: &Resources) -> GameResult<()> {
+    fn draw_map(&self, ctx: &mut Context, res: &Resources, map_bounds: &Rect) -> GameResult<()> {
         for &pos in self.tiles.iter() {
             let final_pos = Point2 { x: (self.pos.x + pos.x), y: (self.pos.y + pos.y) };
-            self.tile_type.draw(ctx, res, final_pos)?;
+            self.tile_type.draw_map(ctx, res, map_bounds, final_pos)?;
         }
 
+        Ok(())
+    }
+
+    fn draw(&self, ctx: &mut Context, res: &Resources, offset: Point2<f32>) -> GameResult<()> {
+	for &pos in self.tiles.iter() {
+            let final_pos = Point2 { x: (offset.x + (pos.x - 0.5) * TILE_SIZE), y: (offset.y + (pos.y - 0.5) * TILE_SIZE) };
+            self.tile_type.draw(ctx, res, final_pos)?;
+        }
         Ok(())
     }
 }
 
 struct Resources {
-    _sound: Source,
-    image: Image,
+    //_sound: Source,
+    tileset: Image,
+    background: Image,
+    font: Font,
 }
 
 impl Resources {
     fn new(ctx: &mut Context) -> GameResult<Resources> {
-        let mut _sound = Source::new(ctx, Path::new("/sound.ogg"))?;
-        _sound.set_repeat(true);
-        _sound.set_volume(0.025);
-        _sound.play()?;
+        //let mut _sound = Source::new(ctx, Path::new("/sound.ogg"))?;
+        //_sound.set_repeat(true);
+        //_sound.set_volume(0.025);
+        //_sound.play()?;
 
-        let image = Image::new(ctx, Path::new("/tiles.png"))?;
+        let tileset = Image::new(ctx, Path::new("/tileset.png"))?;
+        let background = Image::new(ctx, Path::new("/background.png"))?;
+        let font = Font::new(ctx, Path::new("/font.ttf"))?;
 
         let res = Resources {
-            _sound,
-            image,
+            //_sound,
+            tileset,
+            background,
+            font,
         };
 
         Ok(res)
@@ -472,20 +506,22 @@ impl Resources {
 
 struct GameState {
     res: Resources,
-    
+
     timer: Duration,
     instance: GameInstance
 }
 
 impl GameState {
     fn new(ctx: &mut Context) -> GameResult<GameState> {
+	let res =  Resources::new(ctx)?;
         let seed = GameState::generate_seed();
+        let instance = GameInstance::new(&res, "Player 1".to_owned(), seed, true);
 
         let state = GameState {
-            res: Resources::new(ctx)?,
-            
+            res,
+
             timer: Duration::default(),
-            instance: GameInstance::new("Player 1".to_owned(), seed),
+            instance,
         };
 
         Ok(state)
@@ -509,28 +545,42 @@ impl GameState {
 }
 
 struct GameInstance {
-    _player: String,
-
     gen: RandomGenerator,
 
     map: [TileType; MAP_TILE_COUNT],
     current: Tetrimino,
-    next: TileType,
+    next: Tetrimino,
 
     score: usize,
     lines: usize,
     level: usize,
+
+    player_text: Text,
+    score_text: Text,
+    lines_text: Text,
+    level_text: Text,
+    next_text: Text,
 }
 
 impl GameInstance {
-    pub fn new(player: String, seed: [u8; 32]) -> GameInstance {
+    fn new(res: &Resources, player: String, seed: [u8; 32], _left: bool) -> GameInstance {
         let mut gen = RandomGenerator::new(seed);
         let current = Tetrimino::new(gen.next());
-        let next = gen.next();
+        let next = Tetrimino::new(gen.next());
+ 
+        let mut player_text = Text::new(player);
+        let mut score_text = Text::new("Score");
+        let mut lines_text = Text::new("Lines");
+        let mut level_text = Text::new("Level");
+        let mut next_text = Text::new("Next");
+
+        player_text.set_font(res.font, Scale::uniform(PLAYER_FONT_SIZE));
+        score_text.set_font(res.font, Scale::uniform(DEFAULT_FONT_SIZE));
+        lines_text.set_font(res.font, Scale::uniform(DEFAULT_FONT_SIZE));
+        level_text.set_font(res.font, Scale::uniform(DEFAULT_FONT_SIZE));
+        next_text.set_font(res.font, Scale::uniform(DEFAULT_FONT_SIZE));
 
         GameInstance {
-            _player: player,
-
             gen,
 
             map: [TileType::Empty; MAP_TILE_COUNT],
@@ -540,6 +590,12 @@ impl GameInstance {
             score: 0,
             lines: 0,
             level: 0,
+
+            player_text,
+            score_text,
+            lines_text,
+            level_text,
+            next_text,
         }
     }
 
@@ -574,15 +630,14 @@ impl GameInstance {
         let complete_lines = self.cleanup_map();
         self.update_score(complete_lines);
 
-        let new_tet = Tetrimino::new(self.next);
-        self.next = self.gen.next();
-        
-        if new_tet.collision(&self.map) {
+        if self.next.collision(&self.map) {
             // TODO
             panic!("Score: {}", self.score);
         }
 
-        self.current = new_tet;
+        self.current = self.next.clone();
+        self.next = Tetrimino::new(self.gen.next());
+
         false
     }
 
@@ -647,18 +702,56 @@ impl GameInstance {
         self.score += factor * (self.level + 1);
     }
 
+    fn draw_text(ctx: &mut Context, bounds: &Rect, text: &Text) -> GameResult<()> {
+        let x = bounds.x + (bounds.w - text.width(ctx) as f32) / 2.0;
+        let y = bounds.y + (bounds.h - text.height(ctx) as f32) / 2.0;
+        let draw_param = DrawParam::default()
+            .dest(Point2 { x, y });
+       	    
+        graphics::draw(ctx, text, draw_param)
+    }
+
+    fn draw_text_and_value(ctx: &mut Context, res: &Resources,  bounds: &Rect, text: &Text, val: usize) -> GameResult<()> {
+        let y = bounds.y + bounds.h / 3.0;
+        let new_bounds = Rect::new(bounds.x, y, bounds.w, 0.0);
+        GameInstance::draw_text(ctx, &new_bounds, text)?;
+
+        let mut text = Text::new(val.to_string());
+        text.set_font(res.font, Scale::uniform(DEFAULT_FONT_SIZE));
+        let y = bounds.y + bounds.h * 2.0 / 3.0;
+        let new_bounds = Rect::new(bounds.x, y, bounds.w, 0.0);
+        GameInstance::draw_text(ctx, &new_bounds, &text)
+  }
+
     fn draw(&self, ctx: &mut Context, res: &Resources) -> GameResult<()> {
+        let map_bounds = &MAP_BOUNDS[0];
+        let next_bounds = &NEXT_BOUNDS[0];
+        let player_bounds = &PLAYER_BOUNDS[0];
+        let score_bounds = &SCORE_BOUNDS[0];
+        let lines_bounds = &LINES_BOUNDS[0];
+        let level_bounds = &LEVEL_BOUNDS[0];
+
         for y in 0..MAP_HEIGHT {
             for x in 0..MAP_WIDTH {
                 let pos: Point2<f32>  = Point2 { x: x as f32, y: y as f32 };
-                self.map[y * MAP_WIDTH + x].draw(ctx, res, pos)?;
+                self.map[y * MAP_WIDTH + x].draw_map(ctx, res, map_bounds, pos)?;
             }
         }
 
-        self.current.draw(ctx, res)?;
-        
-        let title = String::from("Tetris - Score: ") + &self.score.to_string();
-        graphics::window(ctx).set_title(&title);
+        self.current.draw_map(ctx, res, map_bounds)?;
+
+	GameInstance::draw_text(ctx, player_bounds, &self.player_text)?;
+
+	let h = 2.0 * NEXT_TEXT_Y_OFFSET + self.next_text.height(ctx) as f32;
+	let bounds = Rect::new(next_bounds.x, next_bounds.y, next_bounds.w, h);
+	GameInstance::draw_text(ctx, &bounds, &self.next_text)?;
+	let x = next_bounds.x + next_bounds.w / 2.0;
+	let y = next_bounds.y + bounds.h + (next_bounds.h - bounds.h) / 2.0;
+	self.next.draw(ctx, res, Point2 { x, y })?;
+
+	GameInstance::draw_text_and_value(ctx, res, score_bounds, &self.score_text, self.score)?;
+	GameInstance::draw_text_and_value(ctx, res, lines_bounds, &self.lines_text, self.lines)?;
+	GameInstance::draw_text_and_value(ctx, res, level_bounds, &self.level_text, self.level)?;
 
         Ok(())
     }
@@ -678,7 +771,7 @@ impl EventHandler for GameState {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        graphics::clear(ctx, Color::new(0.75, 0.75, 0.75, 1.0));
+        graphics::draw(ctx, &self.res.background, DrawParam::default())?;
 
         self.instance.draw(ctx, &self.res)?;
 
