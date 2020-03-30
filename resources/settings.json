@@ -1,0 +1,113 @@
+{
+    "nickname": "HoodleWoodle",
+    "random_generator": "random bag",
+    "connection": "127.0.0.1:6666",
+    
+    "multiplayer_enabled": false,
+    "singleplayer": "/background.png",
+    "multiplayer": "/background_multiplayer.png",
+
+    "sound": {
+        "file": "/sound.png",
+        "enabled": true,
+        "volume": 0.025
+    },
+    
+    "tile": {
+        "file": "/tileset_22.png",
+        "size": 32.0
+    },
+
+    "font": {
+        "file": "/consolab.ttf",
+        "next_text_y_offset": 24.0,
+        "size_default": 40.0,
+        "size_player": 48.0
+    },
+
+    "player_bounds": [
+        {
+            "x": 16.0,
+            "y": 16.0,
+            "w": 544.0,
+            "h": 60.0
+        },
+        {
+            "x": 629.0,
+            "y": 16.0,
+            "w": 544.0,
+            "h": 60.0
+        }
+    ],
+
+    "score_bounds": [
+        {
+            "x": 16.0,
+            "y": 91.0,
+            "w": 200.0,
+            "h": 96.0
+        },
+        {
+            "x": 970.0,
+            "y": 91.0,
+            "w": 200.0,
+            "h": 96.0
+        }
+    ],
+
+    "lines_bounds": [
+        {
+            "x": 16.0,
+            "y": 196.0,
+            "w": 200.0,
+            "h": 96.0
+        },
+        {
+            "x": 970.0,
+            "y": 196.0,
+            "w": 200.0,
+            "h": 96.0
+        }
+    ],
+
+    "level_bounds": [
+        {
+            "x": 16.0,
+            "y": 301.0,
+            "w": 200.0,
+            "h": 96.0
+        },
+        {
+            "x": 970.0,
+            "y": 301.0,
+            "w": 200.0,
+            "h": 96.0
+        }
+    ],
+
+    "next_bounds": [
+        {
+            "x": 66.0,
+            "y": 412.0,
+            "w": 150.0,
+            "h": 200.0
+        },
+        {
+            "x": 970.0,
+            "y": 412.0,
+            "w": 150.0,
+            "h": 200.0
+        }
+    ],
+
+    "map_position": [
+        {
+            "x": 234.0,
+            "y": 94.0
+        },
+        {
+            "x": 632.0,
+            "y": 94.0
+        }
+    ]
+}
