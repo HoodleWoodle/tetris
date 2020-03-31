@@ -32,23 +32,46 @@ use settings::{Settings, Bounds};
 use random::RandomGenerator;
 
 fn main() {
+    // ----------------------------------------------------------------------
     // TODO:
-
-    // ADITIONAL STATES:
-    // - game over + retry + exit screen
-    // - welcome screen
-    // - help screen
-
-    // OPTIONAL:
+    // - 'Z' keybinding
     // - screenshot
-    // - shadowing
+    // - hard drop enabled setting
+    // ----------------------------------------------------------------------
+    // SINGLEPLAYER STATES:
+    // - menu screen (help, leaderboard, start, exit) [black]
+    // - help screen (key mappings)                   [black]
+    // - leaderboard (local)                          [black]
+    // - GAME STATE                                   [ALREADY IMPLEMENTED]
+    // - pause                                        [gray screenshot]
+    // - game over (continue)                         [gray screenshot]
+    // ----------------------------------------------------------------------
+    // MULTIPLAYER STATES:
+    // - menu screen (toggle ready, count down, exit) [black, other nickname]
+    // - GAME STATE                                   [ALREADY IMPLEMENTED]
+    // - game over (continue)                         [gray screenshot]
+    // ----------------------------------------------------------------------
+    // MULTIPLAYER
+    // - both player are added to the local leaderboard
+    // ----------------------------------------------------------------------
+    // NETWORKING:
+    // - settings handshake
+    // - initial command (seed, nicknames)
+    // - ready command
+    // - ...
+    // ----------------------------------------------------------------------
+    // OPTIONAL:
+    // - shadow piece
     // - hold piece
-
-    // BUGS & FIXES & ...:
+    // ----------------------------------------------------------------------
+    // IMPROVMENTS:
+    // - save generators history locally (only one local generator)
+    // ----------------------------------------------------------------------
+    // BUGS:
     // - disable audio player before exit
     // - quirin´s line problem
-    // - save generators history locally (only one generator)
     // - window scaling bug on laptops?
+    // ----------------------------------------------------------------------
 
     // load settings
     let path = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
@@ -630,7 +653,6 @@ impl<'a> EventHandler for GameState<'a> {
                 KeyCode::X => self.instance.rotate(self.settings, true),
 
                 KeyCode::Space => self.instance.drop_hard(),
-                //KeyCode::Down => self.instance.soft_drop(),
 
                 //KeyCode::Shift => self.instance.hold(),
                 //KeyCode::C => self.instance.hold(),
@@ -640,9 +662,6 @@ impl<'a> EventHandler for GameState<'a> {
 
                 //KeyCode::Escape => pause(),
                 //KeyCode::F1 => pause(),
-
-                //KeyCode::Left => self.instance.left(),
-                //KeyCode::Right => self.instance.right(),
                 _ => (),
             }
         }
