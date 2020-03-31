@@ -68,6 +68,19 @@ pub enum TileType {
 }
 
 impl TileType {
+    pub fn from_usize(n: usize) -> TileType {
+        match n {
+            0 => TileType::I,
+            1 => TileType::O,
+            2 => TileType::T,
+            3 => TileType::S,
+            4 => TileType::Z,
+            5 => TileType::J,
+            6 => TileType::L,
+            _ => TileType::Empty,
+       }
+    }
+
     pub fn draw_map(self, settings: &Settings, batch: &mut SpriteBatch, level: usize, map_position: &Point, pos: Point2<f32>) {
         if pos.y < 2.0 {
             return;

@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use serde_json::Result;
 use std::io::Read;
+use crate::random::RandomGeneratorType;
 
 pub const MAP_WIDTH: usize = 10;
 pub const MAP_HEIGHT: usize = 22;
@@ -51,7 +52,7 @@ pub struct FontSettings {
 #[derive(Deserialize)]
 pub struct Settings {
     pub nickname: String,
-    pub random_generator: String,
+    pub random_generator: RandomGeneratorType,
     pub connection: String,
 
     pub multiplayer_enabled: bool,

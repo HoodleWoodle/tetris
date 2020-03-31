@@ -11,10 +11,6 @@ use ggez::{
     audio::{Source, SoundSource},
     Context, ContextBuilder, GameResult,
 };
-use rand::{
-    rngs::StdRng,
-    RngCore, SeedableRng,
-};
 use std::{
     process,
     cmp,
@@ -29,9 +25,11 @@ use std::{
 
 mod tetrimino;
 mod settings;
+mod random;
 
 use tetrimino::{TileType, Tetrimino};
 use settings::{Settings, Bounds};
+use random::RandomGenerator;
 
 fn main() {
     // TODO:
@@ -41,29 +39,16 @@ fn main() {
     // - welcome screen
     // - help screen
 
-    // TO TIME:
-    // - DAS (initial delay 16 frames - then 6 frames)
-
     // OPTIONAL:
     // - screenshot
-    // - hard drop
     // - shadowing
     // - hold piece
-    // - texture pack change (lvl) (s. SETTINGS)
 
     // BUGS & FIXES & ...:
     // - disable audio player before exit
     // - quirin´s line problem
     // - save generators history locally (only one generator)
     // - window scaling bug on laptops?
-
-    // SETTINGS:
-    // - OPTIONALS
-    // - window size/scaling
-    // - Load GUI offset file
-    // - Sound on/off, volume
-    // - texture pack (s. OPTIONAL)
-    // - type of RandomGenerator
 
     // load settings
     let path = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
@@ -130,48 +115,8 @@ fn main() {
     }
 }
 
-struct RandomGenerator {
-    rng: StdRng,
-    types: Vec<TileType>,
-}
-
-impl RandomGenerator {
-    fn new(seed: [u8; 32]) -> RandomGenerator {
-        let generator = RandomGenerator {
-            rng: StdRng::from_seed(seed),
-            types: Vec::with_capacity(7),
-        };
-
-        generator
-    }
-
-    fn next(&mut self) -> TileType {
-        let mut len = self.types.len();
-
-        if len == 0 {
-            self.types.extend_from_slice(&[
-                TileType::I,
-                TileType::O,
-                TileType::T,
-                TileType::S,
-                TileType::Z,
-                TileType::J,
-                TileType::L,
-            ]);
-            len = 7;
-        }
-
-        if len == 1 {
-            return self.types.pop().unwrap();
-        }
-
-        let value = (self.rng.next_u32() as usize) % len;
-        self.types.swap_remove(value)
-    }
-}
-
 struct Resources {
-    _sound: Source,
+    //_sound: Source,
     tileset: Image,
     background: Image,
     font: Font,
@@ -179,10 +124,12 @@ struct Resources {
 
 impl Resources {
     fn new(ctx: &mut Context, settings: &Settings) -> GameResult<Resources> {
-        let mut _sound = Source::new(ctx, Path::new(&settings.sound.file))?;
-        _sound.set_repeat(true);
-        _sound.set_volume(0.025);
-        _sound.play()?;
+        //let mut _sound = Source::new(ctx, Path::new(&settings.sound.file))?;
+        //if settings.sound.enabled {
+        //    _sound.set_repeat(true);
+        //    _sound.set_volume(settings.sound.volume);
+        //    _sound.play()?;
+        //}
 
         let tileset = Image::new(ctx, Path::new(&settings.tile.file))?;
 
@@ -195,7 +142,7 @@ impl Resources {
         let font = Font::new(ctx, Path::new(&settings.font.file))?;
 
         let res = Resources {
-            _sound,
+            //_sound,
             tileset,
             background,
             font,
@@ -206,7 +153,7 @@ impl Resources {
 }
 
 struct GameInstance {
-    gen: RandomGenerator,
+    gen: Box<dyn RandomGenerator>,
 
     map: [TileType; settings::MAP_TILE_COUNT],
     current: Tetrimino,
@@ -229,12 +176,15 @@ struct GameInstance {
     animation_timer: Option<usize>,
 
     soft_drop: bool,
-    animation_info: Option<(usize, [usize; 5])>
+    animation_info: Option<(usize, [usize; 5])>,
+
+    left_timer: Option<usize>,
+    right_timer: Option<usize>,
 }
 
 impl GameInstance {
     fn new(settings: &Settings, res: &Resources, seed: [u8; 32], player: String, _left: bool) -> GameInstance {
-        let mut gen = RandomGenerator::new(seed);
+        let mut gen = random::create(seed, settings.random_generator);
         let current = Tetrimino::new(gen.next());
         let next = Tetrimino::new(gen.next());
         
@@ -279,6 +229,9 @@ impl GameInstance {
 
             soft_drop: false,
             animation_info: None,
+
+            left_timer: None,
+            right_timer: None,
         }
     }
 
@@ -470,7 +423,6 @@ impl GameInstance {
             if timer == 0 {
                 // remove complete lines
                 for i in 0..count {
-                    println!("{} {} {}", count, lines[i+1], lines[i]);
                     for y in (lines[i + 1]..lines[i]).rev() {
                         for x in 0..settings::MAP_WIDTH {
                             self.map[settings::MAP_WIDTH * (y + i + 1) + x] = self.map[settings::MAP_WIDTH * y + x];
@@ -524,8 +476,38 @@ impl GameInstance {
 
     fn input(&mut self, ctx: &mut Context) {
         self.soft_drop = keyboard::is_key_pressed(ctx, KeyCode::Down);
-        // inputs
-        // DAS
+
+	if keyboard::is_key_pressed(ctx, KeyCode::Left) {
+            if let Some(timer) = self.left_timer {
+                if timer == 0 {
+                    self.left();
+                    self.left_timer = Some(6);
+                } else {
+                    self.left_timer = Some(timer - 1);
+                }
+            } else {
+	        self.left();
+                self.left_timer = Some(16);
+            }
+	} else {
+	    self.left_timer = None;
+        }
+
+  	if keyboard::is_key_pressed(ctx, KeyCode::Right) {
+            if let Some(timer) = self.right_timer {
+                if timer == 0 {
+                    self.right();
+                    self.right_timer = Some(6);
+                } else {
+                    self.right_timer = Some(timer - 1);
+                }
+            } else {
+	        self.right();
+                self.right_timer = Some(16);
+            }
+	} else {
+	    self.right_timer = None;
+        }
     }
 
     fn draw(&self, ctx: &mut Context, settings: &Settings, batch: &mut SpriteBatch, font: &Font) -> GameResult<()> {
@@ -589,7 +571,7 @@ impl<'a> GameState<'a> {
         let batch = SpriteBatch::new(res.tileset.clone());
 
         let seed = GameState::generate_seed();
-        let instance = GameInstance::new(settings, &res, seed, "PLAYER 1".to_owned(), true);
+        let instance = GameInstance::new(settings, &res, seed, settings.nickname.clone(), true);
 
         let state = GameState {
             settings,
@@ -659,8 +641,8 @@ impl<'a> EventHandler for GameState<'a> {
                 //KeyCode::Escape => pause(),
                 //KeyCode::F1 => pause(),
 
-                KeyCode::Left => self.instance.left(),
-                KeyCode::Right => self.instance.right(),
+                //KeyCode::Left => self.instance.left(),
+                //KeyCode::Right => self.instance.right(),
                 _ => (),
             }
         }
