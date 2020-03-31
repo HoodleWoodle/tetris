@@ -122,5 +122,6 @@
 
     "start_level": 8,
 
-    "wall_kicks_enabled": false
+    "wall_kicks_enabled": false,
+    "hard_drop_enabled": false
 }

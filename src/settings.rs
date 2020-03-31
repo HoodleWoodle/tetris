@@ -74,6 +74,7 @@ pub struct Settings {
     pub start_level: usize,
 
     pub wall_kicks_enabled: bool,
+    pub hard_drop_enabled: bool,
 }
 
 pub fn load<R: Read>(reader: R) -> Result<Settings> {
