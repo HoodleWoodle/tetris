@@ -55,15 +55,15 @@ fn main() {
     // - hard drop enabled setting
     // ------------------------------------------------------------------------------------------------
     // SINGLEPLAYER STATES:
-    // - menu (help, leaderboard, credits, start, exit)        [black]
-    // - help (key mappings)                                   [black]
-    // - leaderboard (local)                                   [black]
+    // - menu (help, leaderboard, credits, start, exit)        [image]
+    // - help (key mappings)                                   [image]
+    // - leaderboard (local)                                   [image]
     // - GAME STATE                                            [ALREADY IMPLEMENTED]
     // - pause                                                 [gray screenshot]
     // - game over (continue)                                  [gray screenshot]
     // ------------------------------------------------------------------------------------------------
     // MULTIPLAYER STATES:
-    // - menu (toggle ready, count down, exit)                 [black, other nickname]
+    // - menu (toggle ready, count down, exit)                 [image]
     // - GAME STATE                                            [ALREADY IMPLEMENTED]
     // - game over (continue)                                  [gray screenshot]
     // ------------------------------------------------------------------------------------------------
@@ -79,6 +79,9 @@ fn main() {
     // OPTIONAL:
     // - shadow piece
     // - hold piece
+    // - font color setting (ingame / menus)
+    // - seperate (via bounding box) value and text in ingame rendering
+    // - bounding boxes to fixed positions
     // ------------------------------------------------------------------------------------------------
     // IMPROVMENTS:
     // - save generators history locally (only one local generator)
