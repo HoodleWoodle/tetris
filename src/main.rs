@@ -3,7 +3,10 @@ use ggez::{
     mint::Point2,
     conf::{WindowMode, WindowSetup},
     event::{self, EventHandler, KeyCode, KeyMods},
-    graphics::{self, DrawParam, Rect, Image, Text, Font, Scale},
+    graphics::{
+        self, DrawParam, Rect, Image, Text, Font, Scale, FilterMode,
+        spritebatch::SpriteBatch,
+    },
     audio::{Source, SoundSource},
     Context, ContextBuilder, GameResult,
 };
@@ -171,24 +174,24 @@ enum TileType {
 }
 
 impl TileType {
-    fn draw_map(self, ctx: &mut Context, res: &Resources, level: usize, map_position: &Point2<f32>, pos: Point2<f32>) -> GameResult<()> {
+    fn draw_map(self, batch: &mut SpriteBatch, level: usize, map_position: &Point2<f32>, pos: Point2<f32>) {
         if pos.y < 2.0 {
-            return Ok(());
+            return;
         }
 
         let x = map_position.x + pos.x * TILE_SIZE;
         let y = map_position.y + (pos.y - 2.0) * TILE_SIZE;
 
-        self.draw(ctx, res, level, Point2 { x, y })
-   }
+        self.draw(batch, level, Point2 { x, y });
+    }
 
-    fn draw(self, ctx: &mut Context, res: &Resources, level: usize, pos: Point2<f32>) -> GameResult<()> {
+    fn draw(self, batch: &mut SpriteBatch, level: usize, pos: Point2<f32>) {
         let rect = Rect::new(((self as i32) as f32) * 0.125, ((level % 10) as f32) * 0.1, 0.125, 0.1);
         let draw_param = DrawParam::default()
             .src(rect)
             .dest(pos);
 
-       graphics::draw(ctx, &res.tileset, draw_param)
+        batch.add(draw_param);
     }
 }
 
@@ -459,27 +462,24 @@ impl Tetrimino {
         false
     }
 
-    fn draw_map(&self, ctx: &mut Context, res: &Resources, level: usize, map_position: &Point2<f32>) -> GameResult<()> {
+    fn draw_map(&self, batch: &mut SpriteBatch, level: usize, map_position: &Point2<f32>) {
         for &pos in self.tiles.iter() {
             let final_pos = Point2 { x: (self.pos.x + pos.x), y: (self.pos.y + pos.y) };
-            self.tile_type.draw_map(ctx, res, level, map_position, final_pos)?;
+            self.tile_type.draw_map(batch, level, map_position, final_pos);
         }
-
-        Ok(())
     }
 
-    fn draw(&self, ctx: &mut Context, res: &Resources, level: usize, offset: Point2<f32>) -> GameResult<()> {
+    fn draw(&self, batch: &mut SpriteBatch, level: usize, offset: Point2<f32>) {
         for &pos in self.tiles.iter() {
             let final_pos = Point2 { x: (offset.x + (pos.x - 0.5) * TILE_SIZE), y: (offset.y + (pos.y - 0.5) * TILE_SIZE) };
-            self.tile_type.draw(ctx, res, level, final_pos)?;
+            self.tile_type.draw(batch, level, final_pos);
         }
-        Ok(())
     }
 }
 
 struct Resources {
     _sound: Source,
-    tileset: Image,
+    tileset: SpriteBatch,
     background: Image,
     font: Font,
 }
@@ -497,7 +497,7 @@ impl Resources {
 
         let res = Resources {
             _sound,
-            tileset,
+            tileset: SpriteBatch::new(tileset),
             background,
             font,
         };
@@ -685,25 +685,23 @@ impl GameInstance {
         self.score += factor * (self.level + 1);
     }
 
-    fn draw_text(ctx: &mut Context, bounds: &Rect, text: &Text) -> GameResult<()> {
+    fn draw_text(ctx: &mut Context, bounds: &Rect, text: &Text) {
         let x = bounds.x + (bounds.w - text.width(ctx) as f32) / 2.0;
         let y = bounds.y + (bounds.h - text.height(ctx) as f32) / 2.0;
-        let draw_param = DrawParam::default()
-            .dest(Point2 { x, y });
-       	    
-        graphics::draw(ctx, text, draw_param)
+               
+        graphics::queue_text(ctx, &text, Point2 { x, y }, None);
     }
 
-    fn draw_text_and_value(ctx: &mut Context, res: &Resources,  bounds: &Rect, text: &Text, val: usize) -> GameResult<()> {
+    fn draw_text_and_value(ctx: &mut Context, font: &Font,  bounds: &Rect, text: &Text, val: usize) {
         let y = bounds.y + bounds.h / 3.0;
         let new_bounds = Rect::new(bounds.x, y, bounds.w, 0.0);
-        GameInstance::draw_text(ctx, &new_bounds, text)?;
+        GameInstance::draw_text(ctx, &new_bounds, text);
 
         let mut text = Text::new(val.to_string());
-        text.set_font(res.font, Scale::uniform(DEFAULT_FONT_SIZE));
+        text.set_font(*font, Scale::uniform(DEFAULT_FONT_SIZE));
         let y = bounds.y + bounds.h * 2.0 / 3.0;
         let new_bounds = Rect::new(bounds.x, y, bounds.w, 0.0);
-        GameInstance::draw_text(ctx, &new_bounds, &text)
+        GameInstance::draw_text(ctx, &new_bounds, &text);
     }
 
     fn update(&mut self) {
@@ -812,7 +810,7 @@ impl GameInstance {
         // DAS
     }
 
-    fn draw(&self, ctx: &mut Context, res: &Resources) -> GameResult<()> {
+    fn draw(&self, ctx: &mut Context, batch: &mut SpriteBatch, font: &Font) -> GameResult<()> {
         let map_position = &MAP_POSITION[0];
         let next_bounds = &NEXT_BOUNDS[0];
         let player_bounds = &PLAYER_BOUNDS[0];
@@ -823,26 +821,31 @@ impl GameInstance {
         for y in 0..MAP_HEIGHT {
             for x in 0..MAP_WIDTH {
                 let pos: Point2<f32>  = Point2 { x: x as f32, y: y as f32 };
-                self.map[y * MAP_WIDTH + x].draw_map(ctx, res, self.level, map_position, pos)?;
+                self.map[y * MAP_WIDTH + x].draw_map(batch, self.level, map_position, pos);
             }
         }
+        
+        self.current.draw_map(batch, self.level, map_position);
 
-        self.current.draw_map(ctx, res, self.level, map_position)?;
-
-        GameInstance::draw_text(ctx, player_bounds, &self.player_text)?;
-
+        GameInstance::draw_text(ctx, player_bounds, &self.player_text);
+        
         let h = 2.0 * NEXT_TEXT_Y_OFFSET + self.next_text.height(ctx) as f32;
         let bounds = Rect::new(next_bounds.x, next_bounds.y, next_bounds.w, h);
-        GameInstance::draw_text(ctx, &bounds, &self.next_text)?;
+        GameInstance::draw_text(ctx, &bounds, &self.next_text);
         let x = next_bounds.x + next_bounds.w / 2.0;
         let y = next_bounds.y + bounds.h + (next_bounds.h - bounds.h) / 2.0;
-        self.next.draw(ctx, res, self.level, Point2 { x, y })?;
+        self.next.draw(batch, self.level, Point2 { x, y });
+        
+        GameInstance::draw_text_and_value(ctx, font, score_bounds, &self.score_text, self.score);
+        GameInstance::draw_text_and_value(ctx, font, lines_bounds, &self.lines_text, self.lines);
+        GameInstance::draw_text_and_value(ctx, font, level_bounds, &self.level_text, self.level);
 
-        GameInstance::draw_text_and_value(ctx, res, score_bounds, &self.score_text, self.score)?;
-        GameInstance::draw_text_and_value(ctx, res, lines_bounds, &self.lines_text, self.lines)?;
-        GameInstance::draw_text_and_value(ctx, res, level_bounds, &self.level_text, self.level)?;
+        let default_param = DrawParam::default();
 
-        Ok(())
+        graphics::draw(ctx, batch, default_param)?;
+        batch.clear();
+
+        graphics::draw_queued_text(ctx, default_param, None, FilterMode::Nearest)
     }
 }
 
@@ -886,7 +889,7 @@ impl GameState {
 
 impl EventHandler for GameState {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        println!("{:?}", timer::fps(ctx));
+        println!("FPS: {:?} - Ticks: {}", timer::fps(ctx), timer::ticks(ctx));
 
         while timer::check_update_time(ctx, 60) {
             self.instance.input(ctx);
@@ -900,7 +903,7 @@ impl EventHandler for GameState {
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::draw(ctx, &self.res.background, DrawParam::default())?;
 
-        self.instance.draw(ctx, &self.res)?;
+        self.instance.draw(ctx, &mut self.res.tileset, &self.res.font)?;
 
         graphics::present(ctx)
     }
