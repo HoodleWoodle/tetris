@@ -32,46 +32,62 @@ use settings::{Settings, Bounds};
 use random::RandomGenerator;
 
 fn main() {
-    // ----------------------------------------------------------------------
+    // ORDER:
+    // 1: TODO
+    // 2: update state handling in (GameState => StateHandler)
+    // 3: generic state identified via enum
+	//     - common functions (clear_background, screenshot_background, add_option, add_text)
+	//     - update
+	//     - on_key_event
+	//     - draw
+    // 4: pause state (singleplayer)
+    // 5: menu state (singleplayer)
+    // 6: leaderboard (singleplayer)
+    // 7: help (singleplayer)
+    // 8: game over (singlepayer)
+
+    // 9: MULTIPLAYER
+
+    // ------------------------------------------------------------------------------------------------
     // TODO:
     // - 'Z' keybinding
     // - screenshot
     // - hard drop enabled setting
-    // ----------------------------------------------------------------------
+    // ------------------------------------------------------------------------------------------------
     // SINGLEPLAYER STATES:
-    // - menu screen (help, leaderboard, start, exit) [black]
-    // - help screen (key mappings)                   [black]
-    // - leaderboard (local)                          [black]
-    // - GAME STATE                                   [ALREADY IMPLEMENTED]
-    // - pause                                        [gray screenshot]
-    // - game over (continue)                         [gray screenshot]
-    // ----------------------------------------------------------------------
+    // - menu (help, leaderboard, credits, start, exit)        [black]
+    // - help (key mappings)                                   [black]
+    // - leaderboard (local)                                   [black]
+    // - GAME STATE                                            [ALREADY IMPLEMENTED]
+    // - pause                                                 [gray screenshot]
+    // - game over (continue)                                  [gray screenshot]
+    // ------------------------------------------------------------------------------------------------
     // MULTIPLAYER STATES:
-    // - menu screen (toggle ready, count down, exit) [black, other nickname]
-    // - GAME STATE                                   [ALREADY IMPLEMENTED]
-    // - game over (continue)                         [gray screenshot]
-    // ----------------------------------------------------------------------
+    // - menu (toggle ready, count down, exit)                 [black, other nickname]
+    // - GAME STATE                                            [ALREADY IMPLEMENTED]
+    // - game over (continue)                                  [gray screenshot]
+    // ------------------------------------------------------------------------------------------------
     // MULTIPLAYER
     // - both player are added to the local leaderboard
-    // ----------------------------------------------------------------------
+    // ------------------------------------------------------------------------------------------------
     // NETWORKING:
     // - settings handshake
     // - initial command (seed, nicknames)
     // - ready command
     // - ...
-    // ----------------------------------------------------------------------
+    // ------------------------------------------------------------------------------------------------
     // OPTIONAL:
     // - shadow piece
     // - hold piece
-    // ----------------------------------------------------------------------
+    // ------------------------------------------------------------------------------------------------
     // IMPROVMENTS:
     // - save generators history locally (only one local generator)
-    // ----------------------------------------------------------------------
+    // ------------------------------------------------------------------------------------------------
     // BUGS:
     // - disable audio player before exit
     // - quirin´s line problem
     // - window scaling bug on laptops?
-    // ----------------------------------------------------------------------
+    // ------------------------------------------------------------------------------------------------
 
     // load settings
     let path = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
