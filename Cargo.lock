@@ -1777,6 +1777,9 @@ name = "serde"
 version = "1.0.105"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e707fbbf255b8fc8c3b99abb91e7257a622caeb20a9818cbadbeeede4e0932ff"
+dependencies = [
+ "serde_derive",
+]
 
 [[package]]
 name = "serde_derive"
@@ -1999,6 +2002,8 @@ version = "0.1.0"
 dependencies = [
  "ggez",
  "rand 0.7.3",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

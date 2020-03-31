@@ -4,17 +4,26 @@
     "connection": "127.0.0.1:6666",
     
     "multiplayer_enabled": false,
-    "singleplayer": "/background.png",
-    "multiplayer": "/background_multiplayer.png",
+
+    "singleplayer": {
+        "file": "/singleplayer.png",
+        "w": 572.0,
+        "h": 753.0
+    },
+    "multiplayer": {
+        "file": "/multiplayer.png",
+        "w": 1186.0,
+        "h": 753.0
+    },
 
     "sound": {
-        "file": "/sound.png",
+        "file": "/sound.ogg",
         "enabled": true,
         "volume": 0.025
     },
     
     "tile": {
-        "file": "/tileset_22.png",
+        "file": "/tileset_nes.png",
         "size": 32.0
     },
 
@@ -100,7 +109,7 @@
         }
     ],
 
-    "map_position": [
+    "map_positions": [
         {
             "x": 234.0,
             "y": 94.0
@@ -109,5 +118,9 @@
             "x": 632.0,
             "y": 94.0
         }
-    ]
+    ],
+
+    "start_level": 8,
+
+    "wall_kicks_enabled": false
 }
