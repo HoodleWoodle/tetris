@@ -20,12 +20,8 @@ use state::StateHandler;
 
 fn main() {
     // ORDER:
-    // 2: update state handling in (GameState => StateHandler)
-    // 3: generic state identified via enum
+    // 3: generic state
     //     - common functions (clear_background, screenshot_background, add_option, add_text)
-    //     - update
-    //     - on_key_event
-    //     - draw
     // 4: pause state (singleplayer)
     // 5: menu state (singleplayer)
     // 6: leaderboard (singleplayer)
