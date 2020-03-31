@@ -1,3 +1,5 @@
+//#![windows_subsystem = "windows"]
+
 use ggez::{
     conf::{WindowMode, WindowSetup},
     event,
@@ -54,6 +56,8 @@ fn main() {
     // - ...
     // ------------------------------------------------------------------------------------------------
     // OPTIONAL:
+    // - spawn window centered
+    // - uncomment line one of main.rs
     // - screenshot
     // - shadow piece
     // - hold piece

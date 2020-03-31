@@ -51,10 +51,13 @@ pub struct FontSettings {
 
 #[derive(Deserialize)]
 pub struct Settings {
-    pub nickname: String,
     pub random_generator: RandomGeneratorType,
-    pub connection: String,
+    pub start_level: usize,
+    pub wall_kicks_enabled: bool,
+    pub hard_drop_enabled: bool,
 
+    pub nickname: String,
+    pub connection: String,
     pub multiplayer_enabled: bool,
     
     pub singleplayer: BackgroundSettings,
@@ -70,11 +73,6 @@ pub struct Settings {
     pub level_bounds: [Bounds; 2],
     pub next_bounds: [Bounds; 2],
     pub map_positions: [Point; 2],
-
-    pub start_level: usize,
-
-    pub wall_kicks_enabled: bool,
-    pub hard_drop_enabled: bool,
 }
 
 pub fn load<R: Read>(reader: R) -> Result<Settings> {

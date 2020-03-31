@@ -1,8 +1,11 @@
 {
-    "nickname": "HoodleWoodle",
     "random_generator": "RandomNES",
+    "start_level": 7,
+    "wall_kicks_enabled": false,
+    "hard_drop_enabled": false,
+
+    "nickname": "HoodleWoodle",
     "connection": "127.0.0.1:6666",
-    
     "multiplayer_enabled": false,
 
     "singleplayer": {
@@ -118,10 +121,5 @@
             "x": 632.0,
             "y": 94.0
         }
-    ],
-
-    "start_level": 8,
-
-    "wall_kicks_enabled": false,
-    "hard_drop_enabled": false
+    ]
 }
