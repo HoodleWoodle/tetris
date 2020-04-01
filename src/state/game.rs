@@ -134,8 +134,16 @@ impl GameInstance {
         }
     }
 
-    fn rotate(&mut self, settings: &Settings, clockwise: bool) {
-        self.current.rotate(settings, &self.map, clockwise);
+    fn rotate(&mut self, settings: &Settings, right: bool) {
+        self.current.rotate(settings, &self.map, right);
+    }
+
+    fn rotate_left(&mut self, settings: &Settings) {
+        self.rotate(settings, false);
+    }
+
+    fn rotate_right(&mut self, settings: &Settings) {
+        self.rotate(settings, true);
     }
 
     fn mov(&mut self, x_off: f32, y_off: f32) -> bool {
@@ -154,7 +162,7 @@ impl GameInstance {
         self.mov(0.0, 1.0)
     }
 
-    fn drop_hard(&mut self, settings: &Settings) {
+    fn hard_drop(&mut self, settings: &Settings) {
         if settings.hard_drop_enabled {
             while self.drop() {}
         }
@@ -206,39 +214,43 @@ impl GameInstance {
         self.score += factor * (self.level + 1);
     }
 
-    fn update(&mut self) {
+    fn update_drop(&mut self) {
+        // tetrimino -> map
+        for &pos in self.current.tiles.iter() {
+            let x = (self.current.pos.x + pos.x).round() as usize;
+            let y = (self.current.pos.y + pos.y).round() as usize;
+
+            self.map[settings::MAP_WIDTH * y + x] = self.current.tile_type;
+        }
+
+        // check for complete lines
+        self.animation_info = self.complete_lines();
+        if let Some((count, _)) = self.animation_info {
+            // update score
+            self.update_score(count);
+
+            // trigger animation
+            self.animation_timer = Some(20);
+        } else {
+            // trigger spawn delay
+            self.spawn_delay_timer = Some(10); // TODO: correct value
+        }
+
+        self.drop_timer = None;
+
+        // game over
+        if self.next.collision(&self.map) {
+            // TODO
+            panic!("Score: {}", self.score);
+        }
+    }
+
+    fn update(&mut self, _ctx: &mut Context, _settings: &Settings) {
         // gravity
         if let Some(timer) = self.drop_timer {
             if timer == 0 {
                 if !self.drop() {
-                    // tetrimino -> map
-                    for &pos in self.current.tiles.iter() {
-                        let x = (self.current.pos.x + pos.x).round() as usize;
-                        let y = (self.current.pos.y + pos.y).round() as usize;
-
-                        self.map[settings::MAP_WIDTH * y + x] = self.current.tile_type;
-                    }
-
-                    // check for complete lines
-                    self.animation_info = self.complete_lines();
-                    if let Some((count, _)) = self.animation_info {
-                        // update score
-                        self.update_score(count);
-    
-                        // trigger animation
-                        self.animation_timer = Some(20);
-                    } else {
-                        // trigger spawn delay
-                        self.spawn_delay_timer = Some(10); // TODO: correct value
-                    }
-
-                    self.drop_timer = None;
-    
-                    // game over
-                    if self.next.collision(&self.map) {
-                        // TODO
-                        panic!("Score: {}", self.score);
-                    }
+                    self.update_drop();
                 } else {
                     // reset drop timer
                     self.drop_timer = Some(GameInstance::gravity_value(self.level));
@@ -300,7 +312,7 @@ impl GameInstance {
                 // spawn tetrimino
                 self.current = self.next.clone();
                 self.next = Tetrimino::new(self.gen.next());
-
+                
                 // reset drop timer
                 self.drop_timer = Some(GameInstance::gravity_value(self.level));
 
@@ -311,10 +323,10 @@ impl GameInstance {
         }
     }
 
-    fn input(&mut self, ctx: &mut Context) {
+    fn input(&mut self, ctx: &mut Context, _settings: &Settings) {
         self.soft_drop = keyboard::is_key_pressed(ctx, KeyCode::Down);
 
-	if keyboard::is_key_pressed(ctx, KeyCode::Left) {
+        if keyboard::is_key_pressed(ctx, KeyCode::Left) {
             if let Some(timer) = self.left_timer {
                 if timer == 0 {
                     self.left();
@@ -323,14 +335,14 @@ impl GameInstance {
                     self.left_timer = Some(timer - 1);
                 }
             } else {
-	        self.left();
+	            self.left();
                 self.left_timer = Some(16);
             }
-	} else {
-	    self.left_timer = None;
+	    } else {
+	        self.left_timer = None;
         }
 
-  	if keyboard::is_key_pressed(ctx, KeyCode::Right) {
+        if keyboard::is_key_pressed(ctx, KeyCode::Right) {
             if let Some(timer) = self.right_timer {
                 if timer == 0 {
                     self.right();
@@ -339,11 +351,11 @@ impl GameInstance {
                     self.right_timer = Some(timer - 1);
                 }
             } else {
-	        self.right();
+	            self.right();
                 self.right_timer = Some(16);
             }
-	} else {
-	    self.right_timer = None;
+	    } else {
+	        self.right_timer = None;
         }
     }
 
@@ -445,10 +457,10 @@ impl GameState {
 }
 
 impl State for GameState {
-    fn update(&mut self, ctx: &mut Context, _settings: &Settings) -> GameResult<StateID> {
+    fn update(&mut self, ctx: &mut Context, settings: &Settings) -> GameResult<StateID> {
         while timer::check_update_time(ctx, 60) {
-            self.instance.input(ctx);
-            self.instance.update();
+            self.instance.input(ctx, settings);
+            self.instance.update(ctx, settings);
         }
         
         Ok(StateID::Game)
@@ -463,17 +475,17 @@ impl State for GameState {
     fn key_down_event(&mut self, _ctx: &mut Context, settings: &Settings, keycode: KeyCode, _keymods: KeyMods, repeat: bool) -> StateID {
         if !repeat {
             match keycode {
-                KeyCode::Up => self.instance.rotate(settings, true),
-                KeyCode::X => self.instance.rotate(settings, true),
+                KeyCode::Up => self.instance.rotate_right(settings),
+                KeyCode::X => self.instance.rotate_right(settings),
 
-                KeyCode::Space => self.instance.drop_hard(settings),
+                KeyCode::Space => self.instance.hard_drop(settings),
 
                 //KeyCode::Shift => self.instance.hold(),
                 //KeyCode::C => self.instance.hold(),
 
-                KeyCode::RControl => self.instance.rotate(settings, false),
-                KeyCode::Y => self.instance.rotate(settings, false),
-                KeyCode::Z => self.instance.rotate(settings, false),
+                KeyCode::RControl => self.instance.rotate_left(settings),
+                KeyCode::Y => self.instance.rotate_left(settings),
+                KeyCode::Z => self.instance.rotate_left(settings),
 
                 //KeyCode::Escape => pause(),
                 //KeyCode::F1 => pause(),

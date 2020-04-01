@@ -23,11 +23,9 @@ pub enum StateID {
 
 pub trait State {
     fn update(&mut self, ctx: &mut Context, settings: &Settings) -> GameResult<StateID>;
-
     fn draw(&mut self, ctx: &mut Context, settings: &Settings, res: &Resources) -> GameResult<()>;
 
-    fn key_down_event(&mut self, _ctx: &mut Context, settings: &Settings, keycode: KeyCode,
-        _keymods: KeyMods, repeat: bool) -> StateID;
+    fn key_down_event(&mut self, _ctx: &mut Context, settings: &Settings, keycode: KeyCode, _keymods: KeyMods, repeat: bool) -> StateID;
 }
 
 pub struct Resources {
