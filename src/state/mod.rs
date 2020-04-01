@@ -13,6 +13,8 @@ use std::{
 };
 
 mod game;
+mod menu;
+mod actor;
 
 use crate::settings::Settings;
 use game::GameState;

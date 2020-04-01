@@ -3,10 +3,9 @@ use ggez::{
     mint::Point2,
     event::{KeyCode, KeyMods},
     graphics::{
-        self, DrawParam, Text, Font, Scale, FilterMode,
+        self, DrawParam, Text, Font, Scale, FilterMode, Color,
         spritebatch::SpriteBatch,
     },
-    input::keyboard,
     Context, GameResult,
 };
 use std::cmp;
@@ -15,8 +14,14 @@ use crate::tetrimino::{TileType, Tetrimino};
 use crate::settings::{self, Settings, Bounds};
 use crate::random::{self, RandomGenerator};
 use super::{State, Resources, StateID};
+use super::actor::{
+    Action, Actor,
+    player::Player,
+};
 
 struct GameInstance {
+    actor: Player,
+
     gen: Box<dyn RandomGenerator>,
 
     map: [TileType; settings::MAP_TILE_COUNT],
@@ -69,6 +74,8 @@ impl GameInstance {
         next_text.set_font(res.font, Scale::uniform(settings.font.size_default));
 
         GameInstance {
+            actor: Player::new(),
+            
             gen,
 
             map: [TileType::Empty; settings::MAP_TILE_COUNT],
@@ -139,10 +146,12 @@ impl GameInstance {
     }
 
     fn rotate_left(&mut self, settings: &Settings) {
+        self.actor.push(Action::RotateLeft);
         self.rotate(settings, false);
     }
 
     fn rotate_right(&mut self, settings: &Settings) {
+        self.actor.push(Action::RotateRight);
         self.rotate(settings, true);
     }
 
@@ -151,14 +160,17 @@ impl GameInstance {
     }
 
     fn left(&mut self) {
+        self.actor.push(Action::MoveLeft);
         self.mov(-1.0, 0.0);
     }
 
     fn right(&mut self) {
+        self.actor.push(Action::MoveRight);
         self.mov(1.0, 0.0);
     }
 
     fn drop(&mut self) -> bool {
+        self.actor.push(Action::Drop);
         self.mov(0.0, 1.0)
     }
 
@@ -245,22 +257,30 @@ impl GameInstance {
         }
     }
 
-    fn update(&mut self, _ctx: &mut Context, _settings: &Settings) {
+    fn update(&mut self, ctx: &mut Context) {
         // gravity
-        if let Some(timer) = self.drop_timer {
-            if timer == 0 {
+        if self.actor.is_auto_drop() {
+            if let Some(timer) = self.drop_timer {
+                if timer == 0 {
+                    if !self.drop() {
+                        self.update_drop();
+                    } else {
+                        // reset drop timer
+                        self.drop_timer = Some(GameInstance::gravity_value(self.level));
+                    }
+                } else {
+                    if self.soft_drop && timer >= 2 {
+                        self.drop_timer = Some(timer - 2);
+                    }
+                    else {
+                        self.drop_timer = Some(timer - 1);
+                    }
+                }
+            }
+        } else {
+            if self.actor.check(ctx, Action::Drop) {
                 if !self.drop() {
                     self.update_drop();
-                } else {
-                    // reset drop timer
-                    self.drop_timer = Some(GameInstance::gravity_value(self.level));
-                }
-            } else {
-                if self.soft_drop && timer >= 2 {
-                    self.drop_timer = Some(timer - 2);
-                }
-                else {
-                    self.drop_timer = Some(timer - 1);
                 }
             }
         }
@@ -321,12 +341,14 @@ impl GameInstance {
                 self.spawn_delay_timer = Some(timer - 1);
             }
         }
+
+        self.actor.update(ctx);
     }
 
-    fn input(&mut self, ctx: &mut Context, _settings: &Settings) {
-        self.soft_drop = keyboard::is_key_pressed(ctx, KeyCode::Down);
+    fn input(&mut self, ctx: &mut Context, settings: &Settings) {
+        self.soft_drop = self.actor.check(ctx, Action::SoftDrop);
 
-        if keyboard::is_key_pressed(ctx, KeyCode::Left) {
+        if self.actor.check(ctx, Action::MoveLeft) {
             if let Some(timer) = self.left_timer {
                 if timer == 0 {
                     self.left();
@@ -342,7 +364,7 @@ impl GameInstance {
 	        self.left_timer = None;
         }
 
-        if keyboard::is_key_pressed(ctx, KeyCode::Right) {
+        if self.actor.check(ctx, Action::MoveRight) {
             if let Some(timer) = self.right_timer {
                 if timer == 0 {
                     self.right();
@@ -357,9 +379,24 @@ impl GameInstance {
 	    } else {
 	        self.right_timer = None;
         }
+
+        //KeyCode::Shift => self.instance.hold(),
+        //KeyCode::C => self.instance.hold(),
+
+        if self.actor.check(ctx, Action::RotateLeft) {
+            self.rotate_left(settings);
+        }
+
+        if self.actor.check(ctx, Action::RotateRight) {
+            self.rotate_right(settings);
+        }
+
+        if self.actor.check(ctx, Action::HardDrop) {
+            self.hard_drop(settings)
+        }
     }
 
-    fn draw(&self, ctx: &mut Context, settings: &Settings, batch: &mut SpriteBatch, font: Font) -> GameResult<()> {
+    fn draw(&self, ctx: &mut Context, settings: &Settings, batch: &mut SpriteBatch, font: Font, color: Color) -> GameResult<()> {
         let map_position = &settings.map_positions[0];
         let next_bounds = &settings.next_bounds[0];
         let player_bounds = &settings.player_bounds[0];
@@ -370,15 +407,15 @@ impl GameInstance {
         for y in 0..settings::MAP_HEIGHT {
             for x in 0..settings::MAP_WIDTH {
                 let pos: Point2<f32>  = Point2 { x: x as f32, y: y as f32 };
-                self.map[y * settings::MAP_WIDTH + x].draw_map(settings, batch, self.level, map_position, pos);
+                self.map[y * settings::MAP_WIDTH + x].draw_map(settings, batch, color, self.level, map_position, pos);
             }
         }
         
         if self.drop_timer != None {
-            self.current.draw_map(settings, batch, self.level, map_position);
+            self.current.draw_map(settings, batch, color, self.level, map_position);
         }
 
-        GameInstance::draw_text(ctx, player_bounds, &self.player_text);
+        GameInstance::draw_text(ctx, color, player_bounds, &self.player_text);
         
         let h = 2.0 * settings.font.next_text_y_offset + self.next_text.height(ctx) as f32;
         let bounds = Bounds {
@@ -387,31 +424,26 @@ impl GameInstance {
             w: next_bounds.w,
             h,
         };
-        GameInstance::draw_text(ctx, &bounds, &self.next_text);
+        GameInstance::draw_text(ctx, color, &bounds, &self.next_text);
         let x = next_bounds.x + next_bounds.w / 2.0;
         let y = next_bounds.y + bounds.h + (next_bounds.h - bounds.h) / 2.0;
-        self.next.draw(settings, batch, self.level, Point2 { x, y });
+        self.next.draw(settings, batch, color, self.level, Point2 { x, y });
         
-        GameInstance::draw_text_and_value(ctx, settings, font, score_bounds, &self.score_text, self.score);
-        GameInstance::draw_text_and_value(ctx, settings, font, lines_bounds, &self.lines_text, self.lines);
-        GameInstance::draw_text_and_value(ctx, settings, font, level_bounds, &self.level_text, self.level);
+        GameInstance::draw_text_and_value(ctx, settings, font, color, score_bounds, &self.score_text, self.score);
+        GameInstance::draw_text_and_value(ctx, settings, font, color, lines_bounds, &self.lines_text, self.lines);
+        GameInstance::draw_text_and_value(ctx, settings, font, color, level_bounds, &self.level_text, self.level);
 
-        let default_param = DrawParam::default();
-
-        graphics::draw(ctx, batch, default_param)?;
-        batch.clear();
-
-        graphics::draw_queued_text(ctx, default_param, None, FilterMode::Nearest)
+        Ok(())
     }
 
-    fn draw_text(ctx: &mut Context, bounds: &Bounds, text: &Text) {
+    fn draw_text(ctx: &mut Context, color: Color, bounds: &Bounds, text: &Text) {
         let x = bounds.x + (bounds.w - text.width(ctx) as f32) / 2.0;
         let y = bounds.y + (bounds.h - text.height(ctx) as f32) / 2.0;
                
-        graphics::queue_text(ctx, &text, Point2 { x, y }, None);
+        graphics::queue_text(ctx, &text, Point2 { x, y }, Some(color));
     }
 
-    fn draw_text_and_value(ctx: &mut Context, settings: &Settings, font: Font, bounds: &Bounds, text: &Text, val: usize) {
+    fn draw_text_and_value(ctx: &mut Context, settings: &Settings, font: Font, color: Color, bounds: &Bounds, text: &Text, val: usize) {
         let y = bounds.y + bounds.h / 3.0;
         let new_bounds = Bounds {
             x: bounds.x,
@@ -419,7 +451,7 @@ impl GameInstance {
             w: bounds.w,
             h: 0.0
         };
-        GameInstance::draw_text(ctx, &new_bounds, text);
+        GameInstance::draw_text(ctx, color, &new_bounds, text);
 
         let mut text = Text::new(val.to_string());
         text.set_font(font, Scale::uniform(settings.font.size_default));
@@ -430,14 +462,16 @@ impl GameInstance {
             w: bounds.w,
             h: 0.0
         };
-        GameInstance::draw_text(ctx, &new_bounds, &text);
+        GameInstance::draw_text(ctx, color, &new_bounds, &text);
     }
 }
 
 pub struct GameState {
     batch: SpriteBatch,
 
-    instance: GameInstance
+    instance: GameInstance,
+
+    running: bool,
 }
 
 impl GameState {
@@ -450,6 +484,8 @@ impl GameState {
             batch,
 
             instance,
+
+            running: true,
         };
 
         Ok(state)
@@ -459,37 +495,45 @@ impl GameState {
 impl State for GameState {
     fn update(&mut self, ctx: &mut Context, settings: &Settings) -> GameResult<StateID> {
         while timer::check_update_time(ctx, 60) {
-            self.instance.input(ctx, settings);
-            self.instance.update(ctx, settings);
+            if self.running {
+                self.instance.input(ctx, settings);
+                self.instance.update(ctx);
+            }
         }
         
         Ok(StateID::Game)
     }
 
     fn draw(&mut self, ctx: &mut Context, settings: &Settings, res: &Resources) -> GameResult<()> {
-        graphics::draw(ctx, &res.background, DrawParam::default())?;
+        let color = if self.running {
+            graphics::WHITE
+        } else {
+            Color::new(0.5, 0.5, 0.5, 1.0)
+        };
+        let draw_param = DrawParam::default()
+            .color(color);
 
-        self.instance.draw(ctx, settings, &mut self.batch, res.font)
+        self.instance.draw(ctx, settings, &mut self.batch, res.font, color)?;
+        
+        // actual draw calls
+        graphics::draw(ctx, &res.background, draw_param)?;
+
+        graphics::draw(ctx, &self.batch, draw_param)?;
+        self.batch.clear();
+
+        graphics::draw_queued_text(ctx, draw_param, None, FilterMode::Nearest)
     }
 
     fn key_down_event(&mut self, _ctx: &mut Context, settings: &Settings, keycode: KeyCode, _keymods: KeyMods, repeat: bool) -> StateID {
         if !repeat {
-            match keycode {
-                KeyCode::Up => self.instance.rotate_right(settings),
-                KeyCode::X => self.instance.rotate_right(settings),
-
-                KeyCode::Space => self.instance.hard_drop(settings),
-
-                //KeyCode::Shift => self.instance.hold(),
-                //KeyCode::C => self.instance.hold(),
-
-                KeyCode::RControl => self.instance.rotate_left(settings),
-                KeyCode::Y => self.instance.rotate_left(settings),
-                KeyCode::Z => self.instance.rotate_left(settings),
-
-                //KeyCode::Escape => pause(),
-                //KeyCode::F1 => pause(),
-                _ => (),
+            if !settings.multiplayer_enabled {
+                match keycode {
+                    KeyCode::Escape => self.running = !self.running,
+                    KeyCode::F1 => self.running = !self.running,
+                    KeyCode::P => self.running = !self.running,
+        
+                    _ => (),
+                }
             }
         }
 

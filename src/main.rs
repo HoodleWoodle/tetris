@@ -22,29 +22,12 @@ use state::StateHandler;
 
 fn main() {
     // ORDER:
-    // 3: generic state
-    //     - common functions (clear_background, screenshot_background, add_option, add_text)
-    // 4: pause state (singleplayer)
-    // 5: menu state (singleplayer)
-    // 6: leaderboard (singleplayer)
-    // 7: help (singleplayer)
-    // 8: game over (singlepayer)
+    // - GameState
+    //      - game over [gray screenshot]
+    //      - count down
+    // - Menu (show: start, leaderboard OR ready toggle)
+    // - Leaderboard
 
-    // 9: MULTIPLAYER
-
-    // ------------------------------------------------------------------------------------------------
-    // SINGLEPLAYER STATES:
-    // - menu (help, leaderboard, credits, start, exit)        [image]
-    // - help (key mappings)                                   [image]
-    // - leaderboard (local)                                   [image]
-    // - GAME STATE                                            [ALREADY IMPLEMENTED]
-    // - pause                                                 [gray screenshot]
-    // - game over (continue)                                  [gray screenshot]
-    // ------------------------------------------------------------------------------------------------
-    // MULTIPLAYER STATES:
-    // - menu (toggle ready, count down, exit)                 [image]
-    // - GAME STATE                                            [ALREADY IMPLEMENTED]
-    // - game over (continue)                                  [gray screenshot]
     // ------------------------------------------------------------------------------------------------
     // MULTIPLAYER
     // - both player are added to the local leaderboard
@@ -61,7 +44,7 @@ fn main() {
     // - screenshot
     // - shadow piece
     // - hold piece
-    // - font size, color setting (ingame / menus)
+    // - font size, color setting (ingame / menus), outgray color
     // - seperate (via bounding box) value and text in ingame rendering
     // - bounding boxes to fixed positions
     // ------------------------------------------------------------------------------------------------
