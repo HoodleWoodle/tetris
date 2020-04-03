@@ -33,6 +33,13 @@ pub struct BackgroundSettings {
 	pub file: String,
 	pub w: f32,
 	pub h: f32,
+	pub popup: PopupSettings,
+}
+
+#[derive(Deserialize)]
+pub struct PopupSettings {
+	pub file: String,
+	pub bounds: Bounds,
 }
 
 #[derive(Deserialize)]
@@ -46,7 +53,8 @@ pub struct FontSettings {
 	pub file: String,
 	pub next_text_y_offset: f32,
 	pub size_default: f32,
-	pub size_player: f32
+	pub size_player: f32,
+	pub size_popup: f32,
 }
 
 #[derive(Deserialize)]
@@ -60,8 +68,8 @@ pub struct Settings {
     pub connection: String,
     pub multiplayer_enabled: bool,
     
-    pub singleplayer: BackgroundSettings,
-    pub multiplayer: BackgroundSettings,
+    singleplayer: BackgroundSettings,
+    multiplayer: BackgroundSettings,
 
     pub sound: SoundSettings,
     pub tile: TileSettings,
@@ -73,6 +81,16 @@ pub struct Settings {
     pub level_bounds: [Bounds; 2],
     pub next_bounds: [Bounds; 2],
     pub map_positions: [Point; 2],
+}
+
+impl Settings {
+    pub fn background(&self) -> &BackgroundSettings {
+        if self.multiplayer_enabled {
+            &self.multiplayer
+        } else {
+            &self.singleplayer
+        }
+    }
 }
 
 pub fn load<R: Read>(reader: R) -> Result<Settings> {

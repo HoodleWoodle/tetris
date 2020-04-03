@@ -23,9 +23,6 @@ use state::StateHandler;
 
 fn main() {
     // ORDER:
-    // - GameState
-    //      - game over [gray screenshot]
-    //      - count down
     // - Menu (show: start, leaderboard OR ready toggle)
     // - Leaderboard
 
@@ -94,13 +91,9 @@ fn main() {
         .title("Tetris")
         .icon("/icon.png");
 
-    let (width, height) = if settings.multiplayer_enabled {
-        (settings.multiplayer.w, settings.multiplayer.h)
-    } else {
-        (settings.singleplayer.w, settings.singleplayer.h)
-    };
+    let background = settings.background();
     let window_mode = WindowMode::default()
-        .dimensions(width, height);
+        .dimensions(background.w, background.h);
 
     let (mut ctx, mut event_loop) = ctx_builder
         .window_setup(window_setup)

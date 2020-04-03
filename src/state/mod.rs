@@ -21,6 +21,7 @@ use game::GameState;
 
 pub enum StateID {
     Game,
+    Menu,
 }
 
 pub trait State {
@@ -34,6 +35,7 @@ pub struct Resources {
     _sound: Source,
     pub tileset: Image,
     pub background: Image,
+    pub popup: Image,
     pub font: Font,
 }
 
@@ -48,18 +50,16 @@ impl Resources {
 
         let tileset = Image::new(ctx, Path::new(&settings.tile.file))?;
 
-        let background_file = if settings.multiplayer_enabled {
-            &settings.multiplayer.file
-        } else {
-            &settings.singleplayer.file
-        };
-        let background = Image::new(ctx, Path::new(background_file))?;
+	let background_settings = settings.background();
+        let background = Image::new(ctx, Path::new(&background_settings.file))?;
+        let popup = Image::new(ctx, Path::new(&background_settings.popup.file))?;
         let font = Font::new(ctx, Path::new(&settings.font.file))?;
 
         let res = Resources {
             _sound,
             tileset,
             background,
+            popup,
             font,
         };
 

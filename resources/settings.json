@@ -56,7 +56,8 @@
         "file": "/consolab.ttf",
         "next_text_y_offset": 24.0,
         "size_default": 40.0,
-        "size_player": 48.0
+        "size_player": 48.0,
+        "size_popup": 48.0
     },
 
     "player_bounds": [

@@ -111,4 +111,8 @@ impl Map {
             }
         }
     }
+
+    pub fn reset(&mut self) {
+        self.tiles = [TileType::Empty; settings::MAP_TILE_COUNT];
+    }
 }
