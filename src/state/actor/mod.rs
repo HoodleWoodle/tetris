@@ -22,7 +22,7 @@ pub trait Actor {
         true
     }
 
-    fn on_spawn(&mut self, _settings: &Settings, _map: &Map, _current: TileType, _next: TileType) {
+    fn on_spawn(&mut self, _settings: &Settings, _map: &Map, _current: TileType, _next: TileType, _score: usize, _lines: usize, _level: usize) {
     }
 
     fn check(&mut self, ctx: &mut Context, action: Action) -> bool;

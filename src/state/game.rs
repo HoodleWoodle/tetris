@@ -59,13 +59,13 @@ impl GameInstance {
         let mut gen = random::create(seed, settings.random_generator);
         let current = Tetrimino::new(gen.next());
         let next = Tetrimino::new(gen.next());
-
-        let map = Map::new();
-        actor.on_spawn(settings, &map, current.tile_type, next.tile_type);
         
         let start_level = settings.start_level;
         let level = start_level as isize;
         let line_counter = cmp::min(level * 10 + 10, cmp::max(100, level * 10 - 50)) as isize;
+
+        let map = Map::new();
+        actor.on_spawn(settings, &map, current.tile_type, next.tile_type, 0, 0, start_level);
  
         let mut player_text = Text::new(player);
         let mut score_text = Text::new("SCORE");
@@ -112,7 +112,7 @@ impl GameInstance {
         }
     }
 
-    fn gravity_value(level: usize) -> usize {
+    pub fn gravity_value(level: usize) -> usize {
         match level {
             0 => 48,
             1 => 43,
@@ -294,7 +294,7 @@ impl GameInstance {
                 self.current = self.next.clone();
                 self.next = Tetrimino::new(self.gen.next());
 
-                self.actor.on_spawn(settings, &self.map, self.current.tile_type, self.next.tile_type);
+                self.actor.on_spawn(settings, &self.map, self.current.tile_type, self.next.tile_type, self.score, self.lines, self.level);
                 
                 // reset drop timer
                 self.drop_timer = Some(GameInstance::gravity_value(self.level));
