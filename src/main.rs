@@ -16,6 +16,7 @@ use std::{
 mod tetrimino;
 mod settings;
 mod random;
+mod map;
 mod state;
 
 use state::StateHandler;

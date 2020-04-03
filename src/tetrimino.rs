@@ -7,7 +7,8 @@ use ggez::{
 };
 use std::cmp::PartialEq;
 
-use crate::settings::{self, Settings, Point};
+use crate::settings::{Settings, Point};
+use crate::map::Map;
 
 const WALL_KICK_DATA_TSZJL: [[[(f32, f32); 5]; 4]; 2] = [
     [
@@ -242,11 +243,11 @@ impl Tetrimino {
         }
     }
 
-    pub fn mov(&mut self, map: &[TileType; settings::MAP_TILE_COUNT], x_off: f32, y_off: f32) -> bool {
+    pub fn mov(&mut self, map: &Map, x_off: f32, y_off: f32) -> bool {
         self.pos.x += x_off;
         self.pos.y += y_off;
 
-        if self.collision(map)
+        if map.collision(self)
         {
             self.pos.x -= x_off;
             self.pos.y -= y_off;
@@ -256,7 +257,7 @@ impl Tetrimino {
         true
     }
 
-    pub fn rotate(&mut self, settings: &Settings, map: &[TileType; settings::MAP_TILE_COUNT], right: bool) -> bool {
+    pub fn rotate(&mut self, settings: &Settings, map: &Map, right: bool) -> bool {
         if self.tile_type == TileType::O {
             return true;
         }
@@ -286,7 +287,7 @@ impl Tetrimino {
             new_tet.tiles[i] = Point2 { x, y };
         }
 
-        if new_tet.collision(map) {
+        if map.collision(&new_tet) {
             // wall kicks
             if settings.wall_kicks_enabled {
                 let rotation_direction_index = if right { 0 } else { 1 };
@@ -311,25 +312,6 @@ impl Tetrimino {
 
         *self = new_tet;
         true
-    }
-
-    pub fn collision(&self, map: &[TileType; settings::MAP_TILE_COUNT]) -> bool {
-        for &tile in self.tiles.iter() {
-            let x = (self.pos.x + tile.x).round() as usize;
-            let y = (self.pos.y + tile.y).round() as usize;
-
-            // (x < 0 || y < 0) is tested within next check because of usize wrap-around
-
-            if x >= settings::MAP_WIDTH || y >= settings::MAP_HEIGHT {
-                return true;
-            }
-
-            if map[y * settings::MAP_WIDTH + x] != TileType::Empty {
-                return true;
-            }
-        }
-
-        false
     }
 
     pub fn draw_map(&self, settings: &Settings, batch: &mut SpriteBatch, color: Color, level: usize, map_position: &Point) {

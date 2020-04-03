@@ -2,7 +2,11 @@ use ggez::Context;
 
 pub mod player;
 
-#[derive(Copy, Clone)]
+use crate::settings::Settings;
+use crate::tetrimino::TileType;
+use crate::map::Map;
+
+#[derive(Copy, Clone, PartialEq)]
 pub enum Action {
     RotateLeft,
     RotateRight,
@@ -16,6 +20,9 @@ pub enum Action {
 pub trait Actor {
     fn is_auto_drop(&self) -> bool {
         true
+    }
+
+    fn on_spawn(&mut self, _settings: &Settings, _map: &Map, _current: TileType, _next: TileType) {
     }
 
     fn check(&mut self, ctx: &mut Context, action: Action) -> bool;

@@ -13,6 +13,7 @@ use std::cmp;
 use crate::tetrimino::{TileType, Tetrimino};
 use crate::settings::{self, Settings, Bounds};
 use crate::random::{self, RandomGenerator};
+use crate::map::Map;
 use super::{State, Resources, StateID};
 use super::actor::{
     Action, Actor,
@@ -24,7 +25,7 @@ struct GameInstance {
 
     gen: Box<dyn RandomGenerator>,
 
-    map: [TileType; settings::MAP_TILE_COUNT],
+    map: Map,
     current: Tetrimino,
     next: Tetrimino,
 
@@ -45,7 +46,7 @@ struct GameInstance {
     animation_timer: Option<usize>,
 
     soft_drop: bool,
-    animation_info: Option<(usize, [usize; 5])>,
+    animation_info: Vec<usize>,
 
     left_timer: Option<usize>,
     right_timer: Option<usize>,
@@ -53,9 +54,14 @@ struct GameInstance {
 
 impl GameInstance {
     fn new(settings: &Settings, res: &Resources, seed: [u8; 32], player: String, _left: bool) -> GameInstance {
+        let mut actor = Player::new();
+
         let mut gen = random::create(seed, settings.random_generator);
         let current = Tetrimino::new(gen.next());
         let next = Tetrimino::new(gen.next());
+
+        let map = Map::new();
+        actor.on_spawn(settings, &map, current.tile_type, next.tile_type);
         
         let start_level = settings.start_level;
         let level = start_level as isize;
@@ -74,11 +80,11 @@ impl GameInstance {
         next_text.set_font(res.font, Scale::uniform(settings.font.size_default));
 
         GameInstance {
-            actor: Player::new(),
+            actor,
             
             gen,
 
-            map: [TileType::Empty; settings::MAP_TILE_COUNT],
+            map,
             current,
             next,
 
@@ -99,7 +105,7 @@ impl GameInstance {
             animation_timer: None,
 
             soft_drop: false,
-            animation_info: None,
+            animation_info: Vec::new(),
 
             left_timer: None,
             right_timer: None,
@@ -180,33 +186,6 @@ impl GameInstance {
         }
     }
 
-    fn complete_lines(&mut self) -> Option<(usize, [usize; 5])> {
-        let mut count = 0;
-        let mut lines = [0; 5];
-
-        for y in (0..settings::MAP_HEIGHT).rev() {
-            let mut complete = true;
-
-            for x in 0..settings::MAP_WIDTH {
-                if self.map[settings::MAP_WIDTH * y + x] == TileType::Empty {
-                    complete = false;
-                    break;
-                }
-            }
-
-            if complete {
-                lines[count] = y;
-                count += 1;
-            }
-        }
-
-        if count != 0 {
-            Some((count, lines))
-        } else {
-            None
-        }
-    }
-
     fn update_score(&mut self, complete_lines: usize) {
         self.lines += complete_lines;
         self.line_counter -= complete_lines as isize;
@@ -228,18 +207,13 @@ impl GameInstance {
 
     fn update_drop(&mut self) {
         // tetrimino -> map
-        for &pos in self.current.tiles.iter() {
-            let x = (self.current.pos.x + pos.x).round() as usize;
-            let y = (self.current.pos.y + pos.y).round() as usize;
-
-            self.map[settings::MAP_WIDTH * y + x] = self.current.tile_type;
-        }
+        self.map.apply(&self.current);
 
         // check for complete lines
-        self.animation_info = self.complete_lines();
-        if let Some((count, _)) = self.animation_info {
+        self.animation_info = self.map.complete_lines();
+        if !self.animation_info.is_empty() {
             // update score
-            self.update_score(count);
+            self.update_score(self.animation_info.len() - 1);
 
             // trigger animation
             self.animation_timer = Some(20);
@@ -251,13 +225,13 @@ impl GameInstance {
         self.drop_timer = None;
 
         // game over
-        if self.next.collision(&self.map) {
+        if self.map.collision(&self.next) {
             // TODO
             panic!("Score: {}", self.score);
         }
     }
 
-    fn update(&mut self, ctx: &mut Context) {
+    fn update(&mut self, ctx: &mut Context, settings: &Settings) {
         // gravity
         if self.actor.is_auto_drop() {
             if let Some(timer) = self.drop_timer {
@@ -287,24 +261,8 @@ impl GameInstance {
 
         // clear line animation
         if let Some(timer) = self.animation_timer {
-            let (count, lines) = self.animation_info.unwrap();
-
             if timer == 0 {
-                // remove complete lines
-                for i in 0..count {
-                    for y in (lines[i + 1]..lines[i]).rev() {
-                        for x in 0..settings::MAP_WIDTH {
-                            self.map[settings::MAP_WIDTH * (y + i + 1) + x] = self.map[settings::MAP_WIDTH * y + x];
-                        }
-                    }
-                }
-        
-                //
-                for i in 0..count {
-                    for x in 0..settings::MAP_WIDTH {
-                        self.map[settings::MAP_WIDTH * i + x] = TileType::Empty;
-                    }
-                }
+                self.map.clear(&self.animation_info);
 
                 // trigger spawn delay
                 self.spawn_delay_timer = Some(10); // TODO: correct value
@@ -313,12 +271,15 @@ impl GameInstance {
             } else {
                 if timer % 4 == 0 {
                     // advance animation
+                    let count = self.animation_info.len() - 1;
+
                     let step = timer / 4;
                     let x0 = step - 1;
                     let x1 = settings::MAP_WIDTH - step;
                     for i in 0..count {
-                        self.map[settings::MAP_WIDTH * lines[i] + x0] = TileType::Empty;
-                        self.map[settings::MAP_WIDTH * lines[i] + x1] = TileType::Empty;
+                        let y = self.animation_info[i];
+                        self.map.set(x0, y, TileType::Empty);
+                        self.map.set(x1, y, TileType::Empty);
                     }
                 }
 
@@ -332,6 +293,8 @@ impl GameInstance {
                 // spawn tetrimino
                 self.current = self.next.clone();
                 self.next = Tetrimino::new(self.gen.next());
+
+                self.actor.on_spawn(settings, &self.map, self.current.tile_type, self.next.tile_type);
                 
                 // reset drop timer
                 self.drop_timer = Some(GameInstance::gravity_value(self.level));
@@ -404,12 +367,7 @@ impl GameInstance {
         let lines_bounds = &settings.lines_bounds[0];
         let level_bounds = &settings.level_bounds[0];
 
-        for y in 0..settings::MAP_HEIGHT {
-            for x in 0..settings::MAP_WIDTH {
-                let pos: Point2<f32>  = Point2 { x: x as f32, y: y as f32 };
-                self.map[y * settings::MAP_WIDTH + x].draw_map(settings, batch, color, self.level, map_position, pos);
-            }
-        }
+        self.map.draw(settings, batch, color, self.level, map_position);
         
         if self.drop_timer != None {
             self.current.draw_map(settings, batch, color, self.level, map_position);
@@ -497,7 +455,7 @@ impl State for GameState {
         while timer::check_update_time(ctx, 60) {
             if self.running {
                 self.instance.input(ctx, settings);
-                self.instance.update(ctx);
+                self.instance.update(ctx, settings);
             }
         }
         
