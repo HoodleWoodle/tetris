@@ -4,19 +4,41 @@
     "wall_kicks_enabled": false,
     "hard_drop_enabled": false,
 
-    "nickname": "HoodleWoodle",
+    "nickname": "Player 1",
     "connection": "127.0.0.1:6666",
     "multiplayer_enabled": false,
 
     "singleplayer": {
         "file": "/singleplayer.png",
         "w": 572.0,
-        "h": 753.0
+        "h": 753.0,
+        
+        "popup": {
+            "file": "/singleplayer_popup.png",
+            
+            "bounds": {
+                "x": 238.0,
+                "y": 289.0,
+                "w": 312.0,
+                "h": 120.0
+            }
+        }
     },
     "multiplayer": {
         "file": "/multiplayer.png",
         "w": 1186.0,
-        "h": 753.0
+        "h": 753.0,
+        
+        "popup": {
+            "file": "/multiplayer_popup.png",
+
+            "bounds": {
+                "x": 238.0,
+                "y": 289.0,
+                "w": 710.0,
+                "h": 120.0
+            }
+        }
     },
 
     "sound": {
