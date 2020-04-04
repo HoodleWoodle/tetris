@@ -491,7 +491,7 @@ impl State for GameState {
 
     fn draw(&mut self, ctx: &mut Context, settings: &Settings, res: &Resources) -> GameResult<()> {
         let color = if !self.running || self.instance.gameover {
-            Color::new(0.5, 0.5, 0.5, 1.0)
+            Color::from(settings.background().gray_color)
         } else {
             graphics::WHITE
         };
@@ -507,7 +507,7 @@ impl State for GameState {
         graphics::draw(ctx, &self.batch, draw_param)?;
         self.batch.clear();
 
-        graphics::draw_queued_text(ctx, draw_param, None, FilterMode::Nearest)?;
+        graphics::draw_queued_text(ctx, draw_param, None, FilterMode::Linear)?;
 
         if !self.running || self.instance.gameover {
             let popup_bounds = &settings.background().popup.bounds;
@@ -520,13 +520,20 @@ impl State for GameState {
             } else if self.instance.gameover {
                 draw_text(ctx, graphics::WHITE, popup_bounds, &self.gameover_text);
             }
-            graphics::draw_queued_text(ctx, DrawParam::default(), None, FilterMode::Nearest)?;
+            graphics::draw_queued_text(ctx, DrawParam::default(), None, FilterMode::Linear)?;
         }
 
         Ok(())
     }
 
     fn key_down_event(&mut self, _ctx: &mut Context, settings: &Settings, keycode: KeyCode, _keymods: KeyMods, repeat: bool) -> StateID {
+        if self.instance.gameover {
+            if keycode == KeyCode::Return {
+                self.reset(settings);
+                return StateID::Menu;
+            }
+        }
+        
         if !repeat {
             if !settings.multiplayer_enabled {
                 match keycode {
@@ -539,11 +546,6 @@ impl State for GameState {
                     _ => (),
                 }
             }
-        }
-
-        if self.instance.gameover {
-            self.reset(settings);
-            return StateID::Menu;
         }
 
         StateID::Game

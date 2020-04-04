@@ -1,6 +1,6 @@
 {
     "random_generator": "RandomNES",
-    "start_level": 7,
+    "start_level": 8,
     "wall_kicks_enabled": false,
     "hard_drop_enabled": false,
 
@@ -22,7 +22,9 @@
                 "w": 312.0,
                 "h": 120.0
             }
-        }
+        },
+
+        "gray_color": [0.2, 0.2, 0.2, 1.0]
     },
     "multiplayer": {
         "file": "/multiplayer.png",
@@ -38,13 +40,15 @@
                 "w": 710.0,
                 "h": 120.0
             }
-        }
+        },
+
+        "gray_color": [0.1, 0.1, 0.1, 1.0]
     },
 
     "sound": {
-        "file": "/sound.ogg",
-        "enabled": false,
-        "volume": 0.025
+        "file": "/avatar.mp3",
+        "enabled": true,
+        "volume": 0.125
     },
     
     "tile": {

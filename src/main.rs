@@ -37,22 +37,17 @@ fn main() {
     // - ...
     // ------------------------------------------------------------------------------------------------
     // OPTIONAL:
+    // - font color in settings
     // - spawn window centered
     // - uncomment line one of main.rs
-    // - screenshot
     // - shadow piece
     // - hold piece
-    // - font size, color setting (ingame / menus), outgray color
-    // - seperate (via bounding box) value and text in ingame rendering
-    // - bounding boxes to fixed positions
     // ------------------------------------------------------------------------------------------------
     // IMPROVMENTS:
     // - save generators history locally (only one local generator)
     // ------------------------------------------------------------------------------------------------
     // BUGS:
-    // - disable audio player before exit
-    // - quirin´s line problem
-    // - window scaling bug on laptops?
+    // - graphics glitches (invalid scaling) <==> (manual scaling)
     // ------------------------------------------------------------------------------------------------
 
     // load settings

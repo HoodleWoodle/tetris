@@ -33,7 +33,8 @@ pub struct BackgroundSettings {
 	pub file: String,
 	pub w: f32,
 	pub h: f32,
-	pub popup: PopupSettings,
+    pub popup: PopupSettings,
+    pub gray_color: [f32; 4],
 }
 
 #[derive(Deserialize)]
