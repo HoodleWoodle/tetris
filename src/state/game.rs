@@ -20,6 +20,41 @@ use super::actor::{
     player::Player,
 };
 
+pub fn gravity_value(level: usize) -> usize {
+    match level {
+        0 => 48,
+        1 => 43,
+        2 => 38,
+        3 => 33,
+        4 => 28,
+        5 => 23,
+        6 => 18,
+        7 => 13,
+        8 => 8,
+        9 => 6,
+        10 => 5,
+        11 => 5,
+        12 => 5,
+        13 => 4,
+        14 => 4,
+        15 => 4,
+        16 => 3,
+        17 => 3,
+        18 => 3,
+        19 => 2,
+        20 => 2,
+        21 => 2,
+        22 => 2,
+        23 => 2,
+        24 => 2,
+        25 => 2,
+        26 => 2,
+        27 => 2,
+        28 => 2,
+        _ => 1,
+    }
+}
+
 struct GameInstance {
     actor: Player,
 
@@ -101,7 +136,7 @@ impl GameInstance {
             level_text,
             next_text,
 
-            drop_timer: Some(GameInstance::gravity_value(start_level)),
+            drop_timer: Some(gravity_value(start_level)),
             spawn_delay_timer: None,
             animation_timer: None,
 
@@ -118,41 +153,6 @@ impl GameInstance {
     fn line_counter(start_level: usize) -> isize {
         let level = start_level as isize;
         cmp::min(level * 10 + 10, cmp::max(100, level * 10 - 50)) as isize
-    }
-
-    fn gravity_value(level: usize) -> usize {
-        match level {
-            0 => 48,
-            1 => 43,
-            2 => 38,
-            3 => 33,
-            4 => 28,
-            5 => 23,
-            6 => 18,
-            7 => 13,
-            8 => 8,
-            9 => 6,
-            10 => 5,
-            11 => 5,
-            12 => 5,
-            13 => 4,
-            14 => 4,
-            15 => 4,
-            16 => 3,
-            17 => 3,
-            18 => 3,
-            19 => 2,
-            20 => 2,
-            21 => 2,
-            22 => 2,
-            23 => 2,
-            24 => 2,
-            25 => 2,
-            26 => 2,
-            27 => 2,
-            28 => 2,
-            _ => 1,
-        }
     }
 
     fn rotate(&mut self, settings: &Settings, right: bool) {
@@ -252,7 +252,7 @@ impl GameInstance {
                         }
                     } else {
                         // reset drop timer
-                        self.drop_timer = Some(GameInstance::gravity_value(self.level));
+                        self.drop_timer = Some(gravity_value(self.level));
                     }
                 } else {
                     if self.soft_drop && timer >= 2 {
@@ -312,7 +312,7 @@ impl GameInstance {
                 self.actor.on_spawn(settings, &self.map, self.current.tile_type, self.next.tile_type, self.score, self.lines, self.level);
                 
                 // reset drop timer
-                self.drop_timer = Some(GameInstance::gravity_value(self.level));
+                self.drop_timer = Some(gravity_value(self.level));
 
                 self.spawn_delay_timer = None;
             } else {
@@ -420,7 +420,7 @@ impl GameInstance {
 
         self.line_counter = GameInstance::line_counter(settings.start_level);
 
-        self.drop_timer = Some(GameInstance::gravity_value(settings.start_level));
+        self.drop_timer = Some(gravity_value(settings.start_level));
         self.spawn_delay_timer = None;
         self.animation_timer = None;
 

@@ -17,15 +17,17 @@ mod tetrimino;
 mod settings;
 mod random;
 mod map;
-mod state;
+pub mod state;
 
 use state::StateHandler;
 
 fn main() {
     // ORDER:
-    // - Menu (show: start, leaderboard OR ready toggle)
-    // - Leaderboard
+    // - Menu (show: start)
 
+    // TODO:
+    // - popup for each game instance
+    
     // ------------------------------------------------------------------------------------------------
     // MULTIPLAYER
     // - both player are added to the local leaderboard
@@ -42,12 +44,16 @@ fn main() {
     // - uncomment line one of main.rs
     // - shadow piece
     // - hold piece
+    // - Leaderboard
+    // - menu (show: leaderboard OR ready toggle)
+    // - gameover - score (nicht ausgrauen)
     // ------------------------------------------------------------------------------------------------
     // IMPROVMENTS:
     // - save generators history locally (only one local generator)
     // ------------------------------------------------------------------------------------------------
     // BUGS:
     // - graphics glitches (invalid scaling) <==> (manual scaling)
+    //      - scaling system (tiles, fonts, background/window, popup, ..., menu)
     // ------------------------------------------------------------------------------------------------
 
     // load settings

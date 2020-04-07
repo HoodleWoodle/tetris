@@ -48,7 +48,7 @@ impl Map {
         false
     }
 
-    pub fn complete_lines(&mut self) -> Vec<usize> {
+    pub fn complete_lines(&self) -> Vec<usize> {
         let mut lines = Vec::new();
 
         for y in (0..settings::MAP_HEIGHT).rev() {

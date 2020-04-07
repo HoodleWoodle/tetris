@@ -12,7 +12,7 @@ use std::{
     time::SystemTime,
 };
 
-mod game;
+pub mod game;
 mod menu;
 mod actor;
 
