@@ -156,7 +156,7 @@ impl GameInstance {
     }
 
     fn rotate(&mut self, settings: &Settings, right: bool) {
-        self.current.rotate(settings, &self.map, right);
+        self.current.rotate(settings.wall_kicks_enabled, &self.map, right);
     }
 
     fn rotate_left(&mut self, settings: &Settings) {

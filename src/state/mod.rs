@@ -14,7 +14,7 @@ use std::{
 
 pub mod game;
 mod menu;
-mod actor;
+pub mod actor;
 
 use crate::settings::Settings;
 use game::GameState;

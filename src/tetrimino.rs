@@ -257,7 +257,7 @@ impl Tetrimino {
         true
     }
 
-    pub fn rotate(&mut self, settings: &Settings, map: &Map, right: bool) -> bool {
+    pub fn rotate(&mut self, wall_kicks_enabled: bool, map: &Map, right: bool) -> bool {
         if self.tile_type == TileType::O {
             return true;
         }
@@ -289,7 +289,7 @@ impl Tetrimino {
 
         if map.collision(&new_tet) {
             // wall kicks
-            if settings.wall_kicks_enabled {
+            if wall_kicks_enabled {
                 let rotation_direction_index = if right { 0 } else { 1 };
                 let orientation_index = self.orientation as usize;
 
