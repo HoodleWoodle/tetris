@@ -13,7 +13,7 @@ use std::cmp;
 use crate::tetrimino::{TileType, Tetrimino};
 use crate::settings::{self, Settings, Bounds};
 use crate::random::{self, RandomGenerator};
-use crate::map::Map;
+use crate::map::{Map, CompleteLines};
 use super::{State, Resources, StateID};
 use super::actor::{
     Action, Actor,
@@ -81,7 +81,7 @@ struct GameInstance {
     animation_timer: Option<usize>,
 
     soft_drop: bool,
-    animation_info: Vec<usize>,
+    animation_info: CompleteLines,
 
     left_timer: Option<usize>,
     right_timer: Option<usize>,
@@ -141,7 +141,7 @@ impl GameInstance {
             animation_timer: None,
 
             soft_drop: false,
-            animation_info: Vec::new(),
+            animation_info: CompleteLines::new(),
 
             left_timer: None,
             right_timer: None,
@@ -221,7 +221,7 @@ impl GameInstance {
         self.animation_info = self.map.complete_lines();
         if !self.animation_info.is_empty() {
             // update score
-            self.update_score(self.animation_info.len() - 1);
+            self.update_score(self.animation_info.len());
 
             // trigger animation
             self.animation_timer = Some(20);
@@ -286,7 +286,7 @@ impl GameInstance {
             } else {
                 if timer % 4 == 0 {
                     // advance animation
-                    let count = self.animation_info.len() - 1;
+                    let count = self.animation_info.len();
 
                     let step = timer / 4;
                     let x0 = step - 1;
@@ -425,7 +425,7 @@ impl GameInstance {
         self.animation_timer = None;
 
         self.soft_drop = false;
-        self.animation_info = Vec::new();
+        self.animation_info = CompleteLines::new();
 
         self.left_timer = None;
         self.right_timer = None;
@@ -528,22 +528,28 @@ impl State for GameState {
 
     fn key_down_event(&mut self, _ctx: &mut Context, settings: &Settings, keycode: KeyCode, _keymods: KeyMods, repeat: bool) -> StateID {
         if self.instance.gameover {
-            if keycode == KeyCode::Return {
-                self.reset(settings);
-                return StateID::Menu;
+            match keycode {
+                KeyCode::Return =>  {
+                    self.reset(settings);
+                    return StateID::Menu;
+                },
+
+                KeyCode::R => self.reset(settings),
+
+                _ => (),
             }
-        }
-        
-        if !repeat {
-            if !settings.multiplayer_enabled {
-                match keycode {
-                    KeyCode::Escape => self.running = !self.running,
-                    KeyCode::F1 => self.running = !self.running,
-                    KeyCode::P => self.running = !self.running,
-
-                    KeyCode::R => self.reset(settings),
-
-                    _ => (),
+        } else {
+            if !repeat {
+                if !settings.multiplayer_enabled {
+                    match keycode {
+                        KeyCode::Escape => self.running = !self.running,
+                        KeyCode::F1 => self.running = !self.running,
+                        KeyCode::P => self.running = !self.running,
+    
+                        KeyCode::R => self.reset(settings),
+    
+                        _ => (),
+                    }
                 }
             }
         }

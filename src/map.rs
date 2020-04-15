@@ -5,9 +5,46 @@ use ggez::{
         spritebatch::SpriteBatch,
     },
 };
+use std::ops::Index;
 
 use crate::tetrimino::{TileType, Tetrimino};
 use crate::settings::{self, Settings, Point};
+
+pub struct CompleteLines {
+    data: Vec<usize>,
+}
+
+impl CompleteLines {
+    pub fn new() -> CompleteLines {
+        CompleteLines {
+            data: Vec::new(),
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        if self.data.is_empty() {
+            0
+        } else {
+            self.data.len() - 1
+        }
+    }
+
+    fn push(&mut self, line: usize) {
+        self.data.push(line);
+    }
+}
+
+impl Index<usize> for CompleteLines {
+    type Output = usize;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.data[index]
+    }
+}
 
 #[derive(Clone)]
 pub struct Map {
@@ -48,8 +85,8 @@ impl Map {
         false
     }
 
-    pub fn complete_lines(&self) -> Vec<usize> {
-        let mut lines = Vec::new();
+    pub fn complete_lines(&self) -> CompleteLines {
+        let mut lines = CompleteLines::new();
 
         for y in (0..settings::MAP_HEIGHT).rev() {
             let mut complete = true;
@@ -73,11 +110,9 @@ impl Map {
         lines
     }
 
-    pub fn clear(&mut self, lines: &Vec<usize>) {
-        let count = lines.len() - 1;
-
+    pub fn clear(&mut self, lines: &CompleteLines) {
         // remove complete lines
-        for i in 0..count {
+        for i in 0..lines.len() {
             for y in (lines[i + 1]..lines[i]).rev() {
                 for x in 0..settings::MAP_WIDTH {
                     let tile_type = self.get(x, y);
@@ -87,7 +122,7 @@ impl Map {
         }
 
         //
-        for i in 0..count {
+        for i in 0..lines.len() {
             for x in 0..settings::MAP_WIDTH {
                 self.set(x, i, TileType::Empty);
             }

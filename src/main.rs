@@ -47,6 +47,7 @@ fn main() {
     // - Leaderboard
     // - menu (show: leaderboard OR ready toggle)
     // - gameover - score (nicht ausgrauen)
+    // - sound effects
     // ------------------------------------------------------------------------------------------------
     // IMPROVMENTS:
     // - save generators history locally (only one local generator)
