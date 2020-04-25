@@ -7,6 +7,7 @@ use glium::{
     vertex::VertexBuffer,
     index::IndexBuffer,
 };
+use serde::Deserialize;
 
 pub mod spritebatch;
 pub mod text;
@@ -25,7 +26,7 @@ pub const WHITE: Color = Color {
     a: 1.0,
 };
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Deserialize)]
 pub struct Color {
     r: f32,
     g: f32,

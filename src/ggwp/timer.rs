@@ -5,18 +5,22 @@ use std::{
     time::Duration,
 };
 
+#[allow(dead_code)]
 pub fn ticks(ctx: &Context) -> usize {
     ctx.ticks
 }
 
+#[allow(dead_code)]
 pub fn frames(ctx: &Context) -> usize {
     ctx.frames
 }
 
+#[allow(dead_code)]
 pub fn fps(ctx: &Context) -> usize {
     ctx.fps
 }
 
+#[allow(dead_code)]
 pub fn ups(ctx: &Context) -> usize {
     ctx.ups
 }

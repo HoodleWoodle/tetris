@@ -43,13 +43,11 @@ fn main() {
     // - ...
     // ------------------------------------------------------------------------------------------------
     // OPTIONAL:
-    // - font color in settings
     // - uncomment line one of main.rs
     // - shadow piece
     // - hold piece
     // - Leaderboard
     // - menu (show: leaderboard OR ready toggle)
-    // - gameover - score (nicht ausgrauen)
     // - sound effects
     // ------------------------------------------------------------------------------------------------
     // IMPROVMENTS:

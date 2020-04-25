@@ -42,7 +42,7 @@
             }
         },
 
-        "gray_color": [0.1, 0.1, 0.1, 1.0]
+        "gray_color": [0.2, 0.2, 0.2, 1.0]
     },
 
     "sound": {
@@ -61,7 +61,8 @@
         "next_text_y_offset": 24.0,
         "size_default": 40.0,
         "size_player": 48.0,
-        "size_popup": 48.0
+        "size_popup": 48.0,
+        "color": [1.0, 1.0, 1.0, 1.0]
     },
 
     "player_bounds": [

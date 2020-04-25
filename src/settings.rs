@@ -55,7 +55,8 @@ pub struct FontSettings {
 	pub next_text_y_offset: f32,
 	pub size_default: f32,
 	pub size_player: f32,
-	pub size_popup: f32,
+    pub size_popup: f32,
+    pub color: [f32; 4],
 }
 
 #[derive(Deserialize)]

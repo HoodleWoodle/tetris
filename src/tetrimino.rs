@@ -90,14 +90,14 @@ impl TileType {
         let x = map_position.x + pos.x * settings.tile.size;
         let y = map_position.y + (pos.y - 2.0) * settings.tile.size;
 
-        self.draw(batch, level, Point2 { x, y });
+        self.draw(settings, batch, level, Point2 { x, y });
     }
 
-    fn draw(self, batch: &mut SpriteBatch, level: usize, pos: Point2<f32>) {
+    fn draw(self, settings: &Settings, batch: &mut SpriteBatch, level: usize, pos: Point2<f32>) {
         let rect = Rect::new(((self as i32) as f32) * 0.125, ((level % 10) as f32) * 0.1, 0.125, 0.1);
         let draw_param = DrawParam::default()
             .src(rect)
-            .size(Some(Point2::new(32.0, 32.0)))
+            .size(Some(Point2::new(settings.tile.size, settings.tile.size)))
             .dest(pos);
 
         batch.add(draw_param);
@@ -324,7 +324,7 @@ impl Tetrimino {
     pub fn draw(&self, settings: &Settings, batch: &mut SpriteBatch, level: usize, offset: Point2<f32>) {
         for &pos in self.tiles.iter() {
             let final_pos = Point2 { x: (offset.x + (pos.x - 0.5) * settings.tile.size), y: (offset.y + (pos.y - 0.5) * settings.tile.size) };
-            self.tile_type.draw(batch, level, final_pos);
+            self.tile_type.draw(settings, batch, level, final_pos);
         }
     }
 }

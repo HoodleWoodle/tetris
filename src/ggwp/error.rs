@@ -17,7 +17,7 @@ pub enum GameError {
     IndexBufferCreationError(glium::index::BufferCreationError),
     FreetypeError(freetype::error::Error),
     IoError(std::io::Error),
-    DecoderError(rodio::decoder::DecoderError),
+    //DecoderError(rodio::decoder::DecoderError),
     AudioError(String),
 }
 
@@ -93,10 +93,10 @@ impl From<std::io::Error> for GameError {
     }
 }
 
-impl From<rodio::decoder::DecoderError> for GameError {
-    fn from(from: rodio::decoder::DecoderError) -> GameError {
-        GameError::DecoderError(from)
-    }
-}
+//impl From<rodio::decoder::DecoderError> for GameError {
+//    fn from(from: rodio::decoder::DecoderError) -> GameError {
+//        GameError::DecoderError(from)
+//    }
+//}
 
 pub type GameResult<T = ()> = Result<T, GameError>;
