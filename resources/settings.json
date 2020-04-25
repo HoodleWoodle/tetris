@@ -48,7 +48,7 @@
     "sound": {
         "file": "/sound.ogg",
         "enabled": true,
-        "volume": 0.025
+        "volume": 0.04
     },
     
     "tile": {
