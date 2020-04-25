@@ -1,6 +1,9 @@
 //#![windows_subsystem = "windows"]
 
-use ggez::{
+#[macro_use]
+extern crate glium;
+
+use crate::ggwp::{
     conf::{WindowMode, WindowSetup},
     event,
     ContextBuilder,
@@ -13,6 +16,7 @@ use std::{
     path,
 };
 
+mod ggwp;
 mod tetrimino;
 mod settings;
 mod random;
@@ -40,7 +44,6 @@ fn main() {
     // ------------------------------------------------------------------------------------------------
     // OPTIONAL:
     // - font color in settings
-    // - spawn window centered
     // - uncomment line one of main.rs
     // - shadow piece
     // - hold piece
@@ -51,10 +54,6 @@ fn main() {
     // ------------------------------------------------------------------------------------------------
     // IMPROVMENTS:
     // - save generators history locally (only one local generator)
-    // ------------------------------------------------------------------------------------------------
-    // BUGS:
-    // - graphics glitches (invalid scaling) <==> (manual scaling)
-    //      - scaling system (tiles, fonts, background/window, popup, ..., menu)
     // ------------------------------------------------------------------------------------------------
 
     // load settings
@@ -101,7 +100,7 @@ fn main() {
         .window_setup(window_setup)
         .window_mode(window_mode)
         .build()
-        .expect("Could not create ggez context!");
+        .expect("Could not create crate::ggwp context!");
 
     let mut handler = match StateHandler::new(&mut ctx, settings) {
         Ok(handler) => handler,

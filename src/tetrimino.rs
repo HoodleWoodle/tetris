@@ -1,7 +1,7 @@
-use ggez::{
+use crate::ggwp::{
     mint::Point2,
     graphics::{
-        DrawParam, Rect, Color,
+        DrawParam, Rect,
         spritebatch::SpriteBatch,
     },
 };
@@ -82,7 +82,7 @@ impl TileType {
        }
     }
 
-    pub fn draw_map(self, settings: &Settings, batch: &mut SpriteBatch, color: Color, level: usize, map_position: &Point, pos: Point2<f32>) {
+    pub fn draw_map(self, settings: &Settings, batch: &mut SpriteBatch, level: usize, map_position: &Point, pos: Point2<f32>) {
         if pos.y < 2.0 {
             return;
         }
@@ -90,15 +90,15 @@ impl TileType {
         let x = map_position.x + pos.x * settings.tile.size;
         let y = map_position.y + (pos.y - 2.0) * settings.tile.size;
 
-        self.draw(batch, color, level, Point2 { x, y });
+        self.draw(batch, level, Point2 { x, y });
     }
 
-    fn draw(self, batch: &mut SpriteBatch, color: Color, level: usize, pos: Point2<f32>) {
+    fn draw(self, batch: &mut SpriteBatch, level: usize, pos: Point2<f32>) {
         let rect = Rect::new(((self as i32) as f32) * 0.125, ((level % 10) as f32) * 0.1, 0.125, 0.1);
         let draw_param = DrawParam::default()
             .src(rect)
-            .dest(pos)
-            .color(color);
+            .size(Some(Point2::new(32.0, 32.0)))
+            .dest(pos);
 
         batch.add(draw_param);
     }
@@ -314,17 +314,17 @@ impl Tetrimino {
         true
     }
 
-    pub fn draw_map(&self, settings: &Settings, batch: &mut SpriteBatch, color: Color, level: usize, map_position: &Point) {
+    pub fn draw_map(&self, settings: &Settings, batch: &mut SpriteBatch, level: usize, map_position: &Point) {
         for &pos in self.tiles.iter() {
             let final_pos = Point2 { x: (self.pos.x + pos.x), y: (self.pos.y + pos.y) };
-            self.tile_type.draw_map(settings, batch, color, level, map_position, final_pos);
+            self.tile_type.draw_map(settings, batch, level, map_position, final_pos);
         }
     }
 
-    pub fn draw(&self, settings: &Settings, batch: &mut SpriteBatch, color: Color, level: usize, offset: Point2<f32>) {
+    pub fn draw(&self, settings: &Settings, batch: &mut SpriteBatch, level: usize, offset: Point2<f32>) {
         for &pos in self.tiles.iter() {
             let final_pos = Point2 { x: (offset.x + (pos.x - 0.5) * settings.tile.size), y: (offset.y + (pos.y - 0.5) * settings.tile.size) };
-            self.tile_type.draw(batch, color, level, final_pos);
+            self.tile_type.draw(batch, level, final_pos);
         }
     }
 }

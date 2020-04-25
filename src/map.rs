@@ -1,9 +1,6 @@
-use ggez::{
+use crate::ggwp::{
     mint::Point2,
-    graphics::{
-        Color,
-        spritebatch::SpriteBatch,
-    },
+    graphics::spritebatch::SpriteBatch,
 };
 use std::ops::Index;
 
@@ -138,11 +135,11 @@ impl Map {
         }
     }
     
-    pub fn draw(&self, settings: &Settings, batch: &mut SpriteBatch, color: Color, level: usize, map_position: &Point) {
+    pub fn draw(&self, settings: &Settings, batch: &mut SpriteBatch, level: usize, map_position: &Point) {
         for y in 0..settings::MAP_HEIGHT {
             for x in 0..settings::MAP_WIDTH {
                 let pos: Point2<f32>  = Point2 { x: x as f32, y: y as f32 };
-                self.tiles[y * settings::MAP_WIDTH + x].draw_map(settings, batch, color, level, map_position, pos);
+                self.tiles[y * settings::MAP_WIDTH + x].draw_map(settings, batch, level, map_position, pos);
             }
         }
     }

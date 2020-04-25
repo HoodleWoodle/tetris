@@ -1,4 +1,4 @@
-use ggez::{
+use crate::ggwp::{
     timer,
     event::{EventHandler, KeyCode, KeyMods},
     graphics::{self, Image, Font},
@@ -109,9 +109,9 @@ impl StateHandler {
 
 impl EventHandler for StateHandler {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        // println!("FPS: {:?} - Ticks: {}", timer::fps(ctx), timer::ticks(ctx));
+        //println!("FPS: {} ({} frames) - UPS: {} ({} ticks)", timer::fps(ctx), timer::frames(ctx), timer::ups(ctx), timer::ticks(ctx));
 
-	self.state.update(ctx, &self.settings)?;
+	    self.state.update(ctx, &self.settings)?;
 
         timer::yield_now();
 

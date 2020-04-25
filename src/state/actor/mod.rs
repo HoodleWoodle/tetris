@@ -1,4 +1,4 @@
-use ggez::Context;
+use crate::ggwp::Context;
 
 pub mod player;
 

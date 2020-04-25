@@ -1,4 +1,4 @@
-use ggez::{
+use crate::ggwp::{
     timer,
     mint::Point2,
     event::{KeyCode, KeyMods},
@@ -374,7 +374,7 @@ impl GameInstance {
         }
     }
 
-    fn draw(&self, ctx: &mut Context, settings: &Settings, batch: &mut SpriteBatch, font: Font, color: Color) -> GameResult<()> {
+    fn draw(&self, ctx: &mut Context, settings: &Settings, batch: &mut SpriteBatch, font: Font) -> GameResult<()> {
         let map_position = &settings.map_positions[0];
         let next_bounds = &settings.next_bounds[0];
         let player_bounds = &settings.player_bounds[0];
@@ -382,13 +382,13 @@ impl GameInstance {
         let lines_bounds = &settings.lines_bounds[0];
         let level_bounds = &settings.level_bounds[0];
 
-        self.map.draw(settings, batch, color, self.level, map_position);
+        self.map.draw(settings, batch, self.level, map_position);
         
         if self.drop_timer != None {
-            self.current.draw_map(settings, batch, color, self.level, map_position);
+            self.current.draw_map(settings, batch, self.level, map_position);
         }
 
-        draw_text(ctx, color, player_bounds, &self.player_text);
+        draw_text(ctx, player_bounds, &self.player_text);
         
         let h = 2.0 * settings.font.next_text_y_offset + self.next_text.height(ctx) as f32;
         let bounds = Bounds {
@@ -397,14 +397,14 @@ impl GameInstance {
             w: next_bounds.w,
             h,
         };
-        draw_text(ctx, color, &bounds, &self.next_text);
+        draw_text(ctx, &bounds, &self.next_text);
         let x = next_bounds.x + next_bounds.w / 2.0;
         let y = next_bounds.y + bounds.h + (next_bounds.h - bounds.h) / 2.0;
-        self.next.draw(settings, batch, color, self.level, Point2 { x, y });
+        self.next.draw(settings, batch, self.level, Point2 { x, y });
         
-        draw_text_and_value(ctx, settings, font, color, score_bounds, &self.score_text, self.score);
-        draw_text_and_value(ctx, settings, font, color, lines_bounds, &self.lines_text, self.lines);
-        draw_text_and_value(ctx, settings, font, color, level_bounds, &self.level_text, self.level);
+        draw_text_and_value(ctx, settings, font, score_bounds, &self.score_text, self.score);
+        draw_text_and_value(ctx, settings, font, lines_bounds, &self.lines_text, self.lines);
+        draw_text_and_value(ctx, settings, font, level_bounds, &self.level_text, self.level);
 
         Ok(())
     }
@@ -499,7 +499,7 @@ impl State for GameState {
         let draw_param = DrawParam::default()
             .color(color);
 
-        self.instance.draw(ctx, settings, &mut self.batch, res.font, color)?;
+        self.instance.draw(ctx, settings, &mut self.batch, res.font)?;
 
         // actual draw calls
         graphics::draw(ctx, &res.background, draw_param)?;
@@ -516,9 +516,9 @@ impl State for GameState {
             graphics::draw(ctx, &res.popup, draw_param)?;
 
             if !self.running {
-                draw_text(ctx, graphics::WHITE, popup_bounds, &self.pause_text);
+                draw_text(ctx, popup_bounds, &self.pause_text);
             } else if self.instance.gameover {
-                draw_text(ctx, graphics::WHITE, popup_bounds, &self.gameover_text);
+                draw_text(ctx, popup_bounds, &self.gameover_text);
             }
             graphics::draw_queued_text(ctx, DrawParam::default(), None, FilterMode::Linear)?;
         }
@@ -568,13 +568,13 @@ fn text_center_position(ctx: &mut Context, bounds: &Bounds, text: &Text) -> Poin
     }
 }
 
-fn draw_text(ctx: &mut Context, color: Color, bounds: &Bounds, text: &Text) {
+fn draw_text(ctx: &mut Context, bounds: &Bounds, text: &Text) {
     let pos = text_center_position(ctx, bounds, text);
           
-    graphics::queue_text(ctx, &text, pos, Some(color));
+    graphics::queue_text(ctx, &text, pos, None);
 }
 
-fn draw_text_and_value(ctx: &mut Context, settings: &Settings, font: Font, color: Color, bounds: &Bounds, text: &Text, val: usize) {
+fn draw_text_and_value(ctx: &mut Context, settings: &Settings, font: Font, bounds: &Bounds, text: &Text, val: usize) {
     let y = bounds.y + bounds.h / 3.0;
     let new_bounds = Bounds {
         x: bounds.x,
@@ -582,7 +582,7 @@ fn draw_text_and_value(ctx: &mut Context, settings: &Settings, font: Font, color
         w: bounds.w,
         h: 0.0
     };
-    draw_text(ctx, color, &new_bounds, text);
+    draw_text(ctx, &new_bounds, text);
 
     let mut text = Text::new(val.to_string());
     text.set_font(font, Scale::uniform(settings.font.size_default));
@@ -593,5 +593,5 @@ fn draw_text_and_value(ctx: &mut Context, settings: &Settings, font: Font, color
         w: bounds.w,
         h: 0.0
     };
-    draw_text(ctx, color, &new_bounds, &text);
+    draw_text(ctx, &new_bounds, &text);
 }
