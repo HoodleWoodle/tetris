@@ -70,8 +70,6 @@ where
             }
 
             handler.update(ctx)?;
-            
-            ctx.frames += 1;
 
             // Queue a RedrawRequested event.
             ctx.display.gl_window().window().request_redraw();
@@ -86,6 +84,7 @@ where
             handler.draw(ctx)?;
 
             let mut frame = ctx.display.draw();
+            frame.clear_color(0.0, 0.0, 0.0, 0.0);
 
             for draw_call in ctx.draw_calls.iter() {
                 let texture = &ctx.textures[draw_call.texture_id];
@@ -101,6 +100,8 @@ where
             ctx.draw_calls.clear();
 
             frame.finish()?;
+            
+            ctx.frames += 1;
         },
         _ => ()
     }

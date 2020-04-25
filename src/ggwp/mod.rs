@@ -145,7 +145,8 @@ impl ContextBuilder {
             .with_title(self.window_setup.title)
             .with_window_icon(icon)
             .with_inner_size(self.window_mode.dimensions)
-            .with_visible(false);
+            .with_visible(false)
+            .with_transparent(true);
     
         // OpenGL context
         let context_builder = OpenGLContextBuilder::new();
