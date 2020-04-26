@@ -32,7 +32,8 @@ pub trait State {
 }
 
 pub struct Resources {
-    _sound: Source,
+    #[allow(dead_code)]
+    sound: Source,
     pub tileset: Image,
     pub background: Image,
     pub popup: Image,
@@ -41,11 +42,11 @@ pub struct Resources {
 
 impl Resources {
     fn new(ctx: &mut Context, settings: &Settings) -> GameResult<Resources> {
-        let mut _sound = Source::new(ctx, Path::new(&settings.sound.file))?;
+        let mut sound = Source::new(ctx, Path::new(&settings.sound.file))?;
         if settings.sound.enabled {
-            _sound.set_repeat(true);
-            _sound.set_volume(settings.sound.volume);
-            _sound.play()?;
+            sound.set_repeat(true);
+            sound.set_volume(settings.sound.volume);
+            sound.play()?;
         }
 
         let tileset = Image::new(ctx, Path::new(&settings.tile.file))?;
@@ -56,7 +57,7 @@ impl Resources {
         let font = Font::new(ctx, Path::new(&settings.font.file))?;
 
         let res = Resources {
-            _sound,
+            sound,
             tileset,
             background,
             popup,

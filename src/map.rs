@@ -5,7 +5,7 @@ use crate::ggwp::{
 use std::ops::Index;
 
 use crate::tetrimino::{TileType, Tetrimino};
-use crate::settings::{self, Settings, Point};
+use crate::settings::{self, Settings};
 
 pub struct CompleteLines {
     data: Vec<usize>,
@@ -135,10 +135,10 @@ impl Map {
         }
     }
     
-    pub fn draw(&self, settings: &Settings, batch: &mut SpriteBatch, level: usize, map_position: &Point) {
+    pub fn draw(&self, settings: &Settings, batch: &mut SpriteBatch, level: usize, map_position: &Point2<f32>) {
         for y in 0..settings::MAP_HEIGHT {
             for x in 0..settings::MAP_WIDTH {
-                let pos: Point2<f32>  = Point2 { x: x as f32, y: y as f32 };
+                let pos = Point2::new(x as f32, y as f32);
                 self.tiles[y * settings::MAP_WIDTH + x].draw_map(settings, batch, level, map_position, pos);
             }
         }

@@ -7,7 +7,7 @@ use crate::ggwp::{
 };
 use std::cmp::PartialEq;
 
-use crate::settings::{Settings, Point};
+use crate::settings::Settings;
 use crate::map::Map;
 
 const WALL_KICK_DATA_TSZJL: [[[(f32, f32); 5]; 4]; 2] = [
@@ -82,7 +82,7 @@ impl TileType {
        }
     }
 
-    pub fn draw_map(self, settings: &Settings, batch: &mut SpriteBatch, level: usize, map_position: &Point, pos: Point2<f32>) {
+    pub fn draw_map(self, settings: &Settings, batch: &mut SpriteBatch, level: usize, map_position: &Point2<f32>, pos: Point2<f32>) {
         if pos.y < 2.0 {
             return;
         }
@@ -90,14 +90,15 @@ impl TileType {
         let x = map_position.x + pos.x * settings.tile.size;
         let y = map_position.y + (pos.y - 2.0) * settings.tile.size;
 
-        self.draw(settings, batch, level, Point2 { x, y });
+        self.draw(settings, batch, level, Point2::new(x, y));
     }
 
     fn draw(self, settings: &Settings, batch: &mut SpriteBatch, level: usize, pos: Point2<f32>) {
         let rect = Rect::new(((self as i32) as f32) * 0.125, ((level % 10) as f32) * 0.1, 0.125, 0.1);
+        let size = Point2::new(settings.tile.size, settings.tile.size);
         let draw_param = DrawParam::default()
             .src(rect)
-            .size(Some(Point2::new(settings.tile.size, settings.tile.size)))
+            .size(Some(size))
             .dest(pos);
 
         batch.add(draw_param);
@@ -148,13 +149,13 @@ impl Tetrimino {
     fn new_i() -> Tetrimino {
         Tetrimino {
             tile_type: TileType::I,
-            pos: Point2 { x: 4.5, y: 1.5 },
+            pos: Point2::new(4.5, 1.5),
             orientation: Orientation::Deg0,
             tiles: [
-                Point2 { x:  1.5, y: -0.5 },
-                Point2 { x:  0.5, y: -0.5 },
-                Point2 { x: -0.5, y: -0.5 },
-                Point2 { x: -1.5, y: -0.5 },
+                Point2::new( 1.5, -0.5),
+                Point2::new( 0.5, -0.5),
+                Point2::new(-0.5, -0.5),
+                Point2::new(-1.5, -0.5),
             ],
         }
     }
@@ -162,13 +163,13 @@ impl Tetrimino {
     fn new_o() -> Tetrimino {
         Tetrimino {
             tile_type: TileType::O,
-            pos: Point2 { x: 4.5, y: 0.5 },
+            pos: Point2::new(4.5, 0.5),
             orientation: Orientation::Deg0,
             tiles: [
-                Point2 { x: -0.5, y: -0.5 },
-                Point2 { x: -0.5, y:  0.5 },
-                Point2 { x:  0.5, y: -0.5 },
-                Point2 { x:  0.5, y:  0.5 },
+                Point2::new(-0.5, -0.5),
+                Point2::new(-0.5,  0.5),
+                Point2::new( 0.5, -0.5),
+                Point2::new( 0.5,  0.5),
             ],
         }
     }
@@ -176,13 +177,13 @@ impl Tetrimino {
     fn new_t() -> Tetrimino {
         Tetrimino {
             tile_type: TileType::T,
-            pos: Point2 { x: 4.0, y: 1.0 },
+            pos: Point2::new(4.0, 1.0),
             orientation: Orientation::Deg0,
             tiles: [
-                Point2 { x: -1.0, y:  0.0 },
-                Point2 { x:  1.0, y:  0.0 },
-                Point2 { x:  0.0, y:  0.0 },
-                Point2 { x:  0.0, y: -1.0 },
+                Point2::new(-1.0,  0.0),
+                Point2::new( 1.0,  0.0),
+                Point2::new( 0.0,  0.0),
+                Point2::new( 0.0, -1.0),
             ],
         }
     }
@@ -190,13 +191,13 @@ impl Tetrimino {
     fn new_s() -> Tetrimino {
         Tetrimino {
             tile_type: TileType::S,
-            pos: Point2 { x: 4.0, y: 1.0 },
+            pos: Point2::new(4.0, 1.0),
             orientation: Orientation::Deg0,
             tiles: [
-                Point2 { x: -1.0, y:  0.0 },
-                Point2 { x:  0.0, y:  0.0 },
-                Point2 { x:  0.0, y: -1.0 },
-                Point2 { x:  1.0, y: -1.0 },
+                Point2::new(-1.0,  0.0),
+                Point2::new( 0.0,  0.0),
+                Point2::new( 0.0, -1.0),
+                Point2::new( 1.0, -1.0),
             ],
         }
     }
@@ -204,13 +205,13 @@ impl Tetrimino {
     fn new_z() -> Tetrimino {
         Tetrimino {
             tile_type: TileType::Z,
-            pos: Point2 { x: 4.0, y: 1.0 },
+            pos: Point2::new(4.0, 1.0),
             orientation: Orientation::Deg0,
             tiles: [
-                Point2 { x: -1.0, y: -1.0 },
-                Point2 { x:  0.0, y:  0.0 },
-                Point2 { x:  0.0, y: -1.0 },
-                Point2 { x:  1.0, y:  0.0 },
+                Point2::new(-1.0, -1.0),
+                Point2::new( 0.0,  0.0),
+                Point2::new( 0.0, -1.0),
+                Point2::new( 1.0,  0.0),
             ],
         }
     }
@@ -218,13 +219,13 @@ impl Tetrimino {
     fn new_j() -> Tetrimino {
         Tetrimino {
             tile_type: TileType::J,
-            pos: Point2 { x: 4.0, y: 1.0 },
+            pos: Point2::new(4.0, 1.0),
             orientation: Orientation::Deg0,
             tiles: [
-                Point2 { x:  0.0, y:  0.0 },
-                Point2 { x: -1.0, y:  0.0 },
-                Point2 { x:  1.0, y:  0.0 },
-                Point2 { x: -1.0, y: -1.0 },
+                Point2::new( 0.0,  0.0),
+                Point2::new(-1.0,  0.0),
+                Point2::new( 1.0,  0.0),
+                Point2::new(-1.0, -1.0),
             ],
         }
     }
@@ -232,13 +233,13 @@ impl Tetrimino {
     fn new_l() -> Tetrimino {
         Tetrimino {
             tile_type: TileType::L,
-            pos: Point2 { x: 4.0, y: 1.0 },
+            pos: Point2::new(4.0, 1.0),
             orientation: Orientation::Deg0,
             tiles: [
-                Point2 { x:  0.0, y:  0.0 },
-                Point2 { x: -1.0, y:  0.0 },
-                Point2 { x:  1.0, y:  0.0 },
-                Point2 { x:  1.0, y: -1.0 },
+                Point2::new( 0.0,  0.0),
+                Point2::new(-1.0,  0.0),
+                Point2::new( 1.0,  0.0),
+                Point2::new( 1.0, -1.0),
             ],
         }
     }
@@ -266,7 +267,7 @@ impl Tetrimino {
             tile_type: self.tile_type,
             pos: self.pos,
             orientation: self.orientation.rotate(right),
-            tiles: [Point2 { x: 0.0, y: 0.0 }; 4],
+            tiles: [Point2::new(0.0, 0.0); 4],
         };
 
         for i in 0..4 {
@@ -284,7 +285,7 @@ impl Tetrimino {
                 y = -y;
             }
 
-            new_tet.tiles[i] = Point2 { x, y };
+            new_tet.tiles[i] = Point2::new(x, y);
         }
 
         if map.collision(&new_tet) {
@@ -314,16 +315,18 @@ impl Tetrimino {
         true
     }
 
-    pub fn draw_map(&self, settings: &Settings, batch: &mut SpriteBatch, level: usize, map_position: &Point) {
+    pub fn draw_map(&self, settings: &Settings, batch: &mut SpriteBatch, level: usize, map_position: &Point2<f32>) {
         for &pos in self.tiles.iter() {
-            let final_pos = Point2 { x: (self.pos.x + pos.x), y: (self.pos.y + pos.y) };
+            let final_pos = Point2::new(self.pos.x + pos.x, self.pos.y + pos.y);
             self.tile_type.draw_map(settings, batch, level, map_position, final_pos);
         }
     }
 
     pub fn draw(&self, settings: &Settings, batch: &mut SpriteBatch, level: usize, offset: Point2<f32>) {
         for &pos in self.tiles.iter() {
-            let final_pos = Point2 { x: (offset.x + (pos.x - 0.5) * settings.tile.size), y: (offset.y + (pos.y - 0.5) * settings.tile.size) };
+            let x = offset.x + (pos.x - 0.5) * settings.tile.size;
+            let y = offset.y + (pos.y - 0.5) * settings.tile.size;
+            let final_pos = Point2::new(x, y);
             self.tile_type.draw(settings, batch, level, final_pos);
         }
     }

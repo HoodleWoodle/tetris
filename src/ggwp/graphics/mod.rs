@@ -61,7 +61,7 @@ impl Color {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Deserialize)]
 pub struct Rect {
     pub x: f32,
     pub y: f32,

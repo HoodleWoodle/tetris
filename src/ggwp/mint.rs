@@ -1,4 +1,6 @@
-#[derive(Copy, Clone, Debug)]
+use serde::Deserialize;
+
+#[derive(Copy, Clone, Debug, Deserialize)]
 pub struct Point2<T> {
     pub x: T,
     pub y: T,

@@ -3,7 +3,7 @@ use crate::ggwp::{
     mint::Point2,
     event::{KeyCode, KeyMods},
     graphics::{
-        self, DrawParam, Text, Font, Scale, FilterMode, Color,
+        self, DrawParam, Text, Font, Scale, FilterMode, Color, Rect,
         spritebatch::SpriteBatch,
     },
     Context, GameResult,
@@ -11,7 +11,7 @@ use crate::ggwp::{
 use std::cmp;
 
 use crate::tetrimino::{TileType, Tetrimino};
-use crate::settings::{self, Settings, Bounds};
+use crate::settings::{self, Settings};
 use crate::random::{self, RandomGenerator};
 use crate::map::{Map, CompleteLines};
 use super::{State, Resources, StateID};
@@ -391,12 +391,7 @@ impl GameInstance {
         draw_text(ctx, settings, player_bounds, &self.player_text);
         
         let h = 2.0 * settings.font.next_text_y_offset + self.next_text.height(ctx) as f32;
-        let bounds = Bounds {
-            x: next_bounds.x,
-            y: next_bounds.y,
-            w: next_bounds.w,
-            h,
-        };
+        let bounds = Rect::new(next_bounds.x, next_bounds.y, next_bounds.w, h);
         draw_text(ctx, settings, &bounds, &self.next_text);
         let x = next_bounds.x + next_bounds.w / 2.0;
         let y = next_bounds.y + bounds.h + (next_bounds.h - bounds.h) / 2.0;
@@ -512,7 +507,7 @@ impl State for GameState {
         if !self.running || self.instance.gameover {
             let popup_bounds = &settings.background().popup.bounds;
             let draw_param = DrawParam::default()
-                .dest(Point2 { x: popup_bounds.x, y: popup_bounds.y });
+                .dest(Point2::new(popup_bounds.x, popup_bounds.y));
             graphics::draw(ctx, &res.popup, draw_param)?;
 
             if !self.running {
@@ -558,7 +553,7 @@ impl State for GameState {
     }
 }
 
-fn text_center_position(ctx: &mut Context, bounds: &Bounds, text: &Text) -> Point2<f32> {
+fn text_center_position(ctx: &mut Context, bounds: &Rect, text: &Text) -> Point2<f32> {
     let x = bounds.x + (bounds.w - text.width(ctx) as f32) / 2.0;
     let y = bounds.y + (bounds.h - text.height(ctx) as f32) / 2.0;
 
@@ -568,30 +563,20 @@ fn text_center_position(ctx: &mut Context, bounds: &Bounds, text: &Text) -> Poin
     }
 }
 
-fn draw_text(ctx: &mut Context, settings: &Settings, bounds: &Bounds, text: &Text) {
+fn draw_text(ctx: &mut Context, settings: &Settings, bounds: &Rect, text: &Text) {
     let pos = text_center_position(ctx, bounds, text);
           
-    graphics::queue_text(ctx, &text, pos, Some(Color::from(settings.font.color)));
+    graphics::queue_text(ctx, &text, pos, Some(settings.font.color));
 }
 
-fn draw_text_and_value(ctx: &mut Context, settings: &Settings, font: Font, bounds: &Bounds, text: &Text, val: usize) {
+fn draw_text_and_value(ctx: &mut Context, settings: &Settings, font: Font, bounds: &Rect, text: &Text, val: usize) {
     let y = bounds.y + bounds.h / 3.0;
-    let new_bounds = Bounds {
-        x: bounds.x,
-        y,
-        w: bounds.w,
-        h: 0.0
-    };
+    let new_bounds = Rect::new(bounds.x, y, bounds.w, 0.0);
     draw_text(ctx, settings, &new_bounds, text);
 
     let mut text = Text::new(val.to_string());
     text.set_font(font, Scale::uniform(settings.font.size_default));
     let y = bounds.y + bounds.h * 2.0 / 3.0;
-    let new_bounds = Bounds {
-        x: bounds.x,
-        y,
-        w: bounds.w,
-        h: 0.0
-    };
+    let new_bounds = Rect::new(bounds.x, y, bounds.w, 0.0);
     draw_text(ctx, settings, &new_bounds, &text);
 }

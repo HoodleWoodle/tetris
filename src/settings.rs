@@ -2,24 +2,14 @@ use serde::Deserialize;
 use serde_json::Result;
 use std::io::Read;
 use crate::random::RandomGeneratorType;
+use crate::ggwp::{
+    graphics::{Rect, Color},
+    mint::Point2,
+};
 
 pub const MAP_WIDTH: usize = 10;
 pub const MAP_HEIGHT: usize = 22;
 pub const MAP_TILE_COUNT: usize = MAP_WIDTH * MAP_HEIGHT;
-
-#[derive(Deserialize)]
-pub struct Bounds {
-	pub x: f32,
-	pub y: f32,
-	pub w: f32,
-	pub h: f32,
-}
-
-#[derive(Deserialize)]
-pub struct Point {
-	pub x: f32,
-	pub y: f32,
-}
 
 #[derive(Deserialize)]
 pub struct SoundSettings {
@@ -34,13 +24,13 @@ pub struct BackgroundSettings {
 	pub w: f32,
 	pub h: f32,
     pub popup: PopupSettings,
-    pub gray_color: [f32; 4],
+    pub gray_color: Color,
 }
 
 #[derive(Deserialize)]
 pub struct PopupSettings {
 	pub file: String,
-	pub bounds: Bounds,
+	pub bounds: Rect,
 }
 
 #[derive(Deserialize)]
@@ -56,7 +46,7 @@ pub struct FontSettings {
 	pub size_default: f32,
 	pub size_player: f32,
     pub size_popup: f32,
-    pub color: [f32; 4],
+    pub color: Color,
 }
 
 #[derive(Deserialize)]
@@ -77,12 +67,12 @@ pub struct Settings {
     pub tile: TileSettings,
     pub font: FontSettings,
 
-    pub player_bounds: [Bounds; 2],
-    pub score_bounds: [Bounds; 2],
-    pub lines_bounds: [Bounds; 2],
-    pub level_bounds: [Bounds; 2],
-    pub next_bounds: [Bounds; 2],
-    pub map_positions: [Point; 2],
+    pub player_bounds: [Rect; 2],
+    pub score_bounds: [Rect; 2],
+    pub lines_bounds: [Rect; 2],
+    pub level_bounds: [Rect; 2],
+    pub next_bounds: [Rect; 2],
+    pub map_positions: [Point2<f32>; 2],
 }
 
 impl Settings {
