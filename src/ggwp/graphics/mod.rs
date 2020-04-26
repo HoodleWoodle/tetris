@@ -34,17 +34,6 @@ pub struct Color {
     a: f32,
 }
 
-impl From<[f32; 4]> for Color {
-    fn from(values: [f32; 4]) -> Self {
-        Color {
-            r: values[0],
-            g: values[1],
-            b: values[2],
-            a: values[3],
-        }
-    }
-}
-
 impl Into<[f32; 4]> for Color {
     fn into(self) -> [f32; 4] {
         [self.r, self.g, self.b, self.a]
