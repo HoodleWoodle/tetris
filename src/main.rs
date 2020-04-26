@@ -9,7 +9,6 @@ use crate::ggwp::{
     ContextBuilder,
 };
 use std::{
-    process,
     path::Path,
     fs::File,
     env,
@@ -26,11 +25,9 @@ pub mod state;
 use state::StateHandler;
 
 fn main() {
-    // ORDER:
-    // - Menu (show: start)
-
     // TODO:
     // - popup for each game instance
+    // - menu (show: start)
     
     // ------------------------------------------------------------------------------------------------
     // MULTIPLAYER
@@ -42,16 +39,20 @@ fn main() {
     // - ready command
     // - ...
     // ------------------------------------------------------------------------------------------------
-    // OPTIONAL:
-    // - uncomment line one of main.rs
+
+    // ------------------------------------------------------------------------------------------------
+    // OPTIONAL FEATURES:
+    // - menu (show: leaderboard OR ready toggle)
+    // - leaderboard
+    // - sound effects
     // - shadow piece
     // - hold piece
-    // - Leaderboard
-    // - menu (show: leaderboard OR ready toggle)
-    // - sound effects
     // ------------------------------------------------------------------------------------------------
-    // IMPROVMENTS:
+    // OPTIONAL IMPROVMENTS:
     // - save generators history locally (only one local generator)
+    // ------------------------------------------------------------------------------------------------
+    // FINAL:
+    // - uncomment line one of main.rs
     // ------------------------------------------------------------------------------------------------
 
     // load settings
@@ -61,21 +62,10 @@ fn main() {
         "".to_string()
     };
 
-    let file = match File::open(Path::new(&(path + "resources/settings.json"))) {
-        Ok(file) => file,
-        Err(e) => {
-            eprintln!("Could not load settings: {}", e);
-            process::exit(1);
-        }
-    };
-
-    let settings = match settings::load(file) {
-        Ok(file) => file,
-        Err(e) => {
-            eprintln!("Settings corrupted: {}", e);
-            process::exit(1);
-        }
-    };
+    let file = File::open(Path::new(&(path + "resources/settings.json")))
+        .expect("Could not load settings");
+    let settings = settings::load(file)
+        .expect("Settings corrupted");
 
     // build context
     let mut ctx_builder = ContextBuilder::new("tetris", "");
@@ -98,19 +88,14 @@ fn main() {
         .window_setup(window_setup)
         .window_mode(window_mode)
         .build()
-        .expect("Could not create crate::ggwp context!");
+        .expect("Could not create ggwp context!");
 
-    let mut handler = match StateHandler::new(&mut ctx, settings) {
-        Ok(handler) => handler,
-        Err(e) => {
-            eprintln!("Could not create state handler: {}", e);
-            process::exit(1);
-        }
-    };
+    let mut handler = StateHandler::new(&mut ctx, settings)
+        .expect("Could not create state handler!");
 
     // run
-    match event::run(&mut ctx, &mut event_loop, &mut handler) {
-        Ok(_) => println!("Exited cleanly."),
-        Err(e) => eprintln!("Error occurred: {}", e),
-    }
+    event::run(&mut ctx, &mut event_loop, &mut handler)
+        .expect("Error occurred");
+   
+    println!("Exited cleanly.");
 }

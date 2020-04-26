@@ -62,7 +62,7 @@ where
     if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
         pathbuf = PathBuf::from(manifest_dir + "/resources" + path.as_ref().to_str().unwrap());
     } else {
-        pathbuf = PathBuf::from("/resources".to_owned() + path.as_ref().to_str().unwrap());
+        pathbuf = PathBuf::from("resources".to_owned() + path.as_ref().to_str().unwrap());
     }
     
     if pathbuf.exists() {
