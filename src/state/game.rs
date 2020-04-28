@@ -56,7 +56,7 @@ pub fn gravity_value(level: usize) -> usize {
 }
 
 struct GameInstance {
-    actor: Player,
+    actor: Box<dyn Actor>,
 
     gen: Box<dyn RandomGenerator>,
 
@@ -91,7 +91,7 @@ struct GameInstance {
 
 impl GameInstance {
     fn new(settings: &Settings, res: &Resources, seed: [u8; 32], player: String, _left: bool) -> GameInstance {
-        let mut actor = Player::new();
+        let mut actor = Box::new(Player::new());
 
         let mut gen = random::create(seed, settings.random_generator);
         let current = Tetrimino::new(gen.next());
