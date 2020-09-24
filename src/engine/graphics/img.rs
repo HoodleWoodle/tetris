@@ -1,4 +1,4 @@
-use crate::ggwp::{
+use crate::engine::{
     GameResult, Context,
     graphics::{Drawable, DrawParam, DrawCall},
     util,

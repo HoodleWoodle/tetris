@@ -1,4 +1,4 @@
-use crate::ggwp::mint::Point2;
+use crate::engine::vec::Vec2u;
 use std::{
     u32,
     rc::Rc,
@@ -6,16 +6,16 @@ use std::{
 };
 
 struct Node {
-    origin: Point2<u32>,        // upper left of the rectangle this node represents
-    size: Point2<u32>,          // size of the rectangle this node represents
-    empty: bool,                // false if this node is a leaf and is filled
+    origin: Vec2u,              // upper left of the rectangle this node represents
+    size: Vec2u,                // size of the rectangle this node represents
+    empty: bool,               // false if this node is a leaf and is filled
 
     first: Option<Rc<RefCell<Node>>>,    // left (or top) subdivision
     second: Option<Rc<RefCell<Node>>>,   // right (or bottom) subdivision
 }
 
 impl Node {
-    fn new(origin: Point2<u32>, size: Point2<u32>) -> Node {
+    fn new(origin: Vec2u, size: Vec2u) -> Node {
         Node {
             origin,
             size,
@@ -50,15 +50,16 @@ impl Node {
     //# }
 }
 
+// TODO: this texture packer is fuckin bad ... just replace it with something else
 pub struct TexturePacker {
-    size: Point2<u32>,
+    size: Vec2u,
     buffer: Vec<u8>,
     root: Rc<RefCell<Node>>,
 }
 
 impl TexturePacker {
     pub fn new() -> TexturePacker {
-        let size = Point2::new(512, 512);
+        let size = Vec2u::new(512, 512);
         
         let capacity = (size.x * size.y) as usize;
         let mut buffer = Vec::with_capacity(capacity);
@@ -67,11 +68,11 @@ impl TexturePacker {
         TexturePacker {
             size,
             buffer,
-            root: Rc::new(RefCell::new(Node::new(Point2::new(0, 0), size)))
+            root: Rc::new(RefCell::new(Node::new(Vec2u::new(0, 0), size)))
         }
     }
 
-    pub fn size(&self) -> Point2<u32> {
+    pub fn size(&self) -> Vec2u {
         self.size
     }
 
@@ -79,7 +80,7 @@ impl TexturePacker {
         self.buffer
     }
 
-	fn resize(&mut self, new_size: Point2<u32>) {
+	fn resize(&mut self, new_size: Vec2u) {
         let capacity = (new_size.x * new_size.y) as usize;
         let mut new_buffer = Vec::with_capacity(capacity);
         new_buffer.resize(capacity, 0);
@@ -94,7 +95,7 @@ impl TexturePacker {
 		self.buffer = new_buffer;
 	}
 
-    pub fn pack(&mut self, buffer: &[u8], buffer_size: Point2<u32>) -> Point2<u32> {
+    pub fn pack(&mut self, buffer: &[u8], buffer_size: Vec2u) -> Vec2u {
         //# self.root.borrow().print("root", 0);
         //# println!("_______________________________________________");
         //# println!("{:?}", buffer_size);
@@ -105,7 +106,7 @@ impl TexturePacker {
         let node = node.or_else(|| {
             assert!(false); // TODO: not implemented
 
-            self.resize(Point2::new(self.size.x * 2, self.size.y * 2));
+            self.resize(Vec2u::new(self.size.x * 2, self.size.y * 2));
             self.pack_internal(Rc::clone(&self.root), buffer_size)
         })
         // Note: this assertion will be hit when trying to pack a texture larger than the current size of the texture
@@ -126,7 +127,7 @@ impl TexturePacker {
 		return node.borrow().origin;
     }
 
-    fn pack_internal(&mut self, node: Rc<RefCell<Node>>, buffer_size: Point2<u32>) -> Option<Rc<RefCell<Node>>> {
+    fn pack_internal(&mut self, node: Rc<RefCell<Node>>, buffer_size: Vec2u) -> Option<Rc<RefCell<Node>>> {
         if !node.borrow().empty {
             //# println!("filled");
 			// the node is filled, not gonna fit anything else here
@@ -178,20 +179,20 @@ impl TexturePacker {
                 if vertical_split {
                     // split vertically (first is top)
                     let origin = node.borrow().origin;
-                    let size = Point2::new(node.borrow().size.x, buffer_size.y);
+                    let size = Vec2u::new(node.borrow().size.x, buffer_size.y);
                     first = Node::new(origin, size);
 
-                    let origin = Point2::new(node.borrow().origin.x, node.borrow().origin.y + buffer_size.y);
-                    let size = Point2::new(node.borrow().size.x, node.borrow().size.y - buffer_size.y);
+                    let origin = Vec2u::new(node.borrow().origin.x, node.borrow().origin.y + buffer_size.y);
+                    let size = Vec2u::new(node.borrow().size.x, node.borrow().size.y - buffer_size.y);
 					second = Node::new(origin, size);
                 } else {
                     // split horizontally (first is left)
                     let origin = node.borrow().origin;
-                    let size = Point2::new(buffer_size.x, node.borrow().size.y);
+                    let size = Vec2u::new(buffer_size.x, node.borrow().size.y);
                     first = Node::new(origin, size);
                     
-                    let origin = Point2::new(node.borrow().origin.x + buffer_size.x, node.borrow().origin.y);
-                    let size = Point2::new(node.borrow().size.x - buffer_size.x, node.borrow().size.y);
+                    let origin = Vec2u::new(node.borrow().origin.x + buffer_size.x, node.borrow().origin.y);
+                    let size = Vec2u::new(node.borrow().size.x - buffer_size.x, node.borrow().size.y);
 					second = Node::new(origin, size);
                 }
                 

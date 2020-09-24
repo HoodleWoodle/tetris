@@ -1,7 +1,7 @@
-use crate::ggwp::{
+use crate::engine::{
     timer,
-    mint::Point2,
-    event::{KeyCode, KeyMods},
+    vec::Vec2f,
+    event::KeyCode,
     graphics::{
         self, DrawParam, Text, Font, Scale, FilterMode, Color, Rect,
         spritebatch::SpriteBatch,
@@ -395,7 +395,7 @@ impl GameInstance {
         draw_text(ctx, settings, &bounds, &self.next_text);
         let x = next_bounds.x + next_bounds.w / 2.0;
         let y = next_bounds.y + bounds.h + (next_bounds.h - bounds.h) / 2.0;
-        self.next.draw(settings, batch, self.level, Point2 { x, y });
+        self.next.draw(settings, batch, self.level, Vec2f { x, y });
         
         draw_text_and_value(ctx, settings, font, score_bounds, &self.score_text, self.score);
         draw_text_and_value(ctx, settings, font, lines_bounds, &self.lines_text, self.lines);
@@ -507,7 +507,7 @@ impl State for GameState {
         if !self.running || self.instance.gameover {
             let popup_bounds = &settings.background().popup.bounds;
             let draw_param = DrawParam::default()
-                .dest(Point2::new(popup_bounds.x, popup_bounds.y));
+                .dest(Vec2f::new(popup_bounds.x, popup_bounds.y));
             graphics::draw(ctx, &res.popup, draw_param)?;
 
             if !self.running {
@@ -521,7 +521,7 @@ impl State for GameState {
         Ok(())
     }
 
-    fn key_down_event(&mut self, _ctx: &mut Context, settings: &Settings, keycode: KeyCode, _keymods: KeyMods, repeat: bool) -> StateID {
+    fn key_down_event(&mut self, _ctx: &mut Context, settings: &Settings, keycode: KeyCode, repeat: bool) -> StateID {
         if self.instance.gameover {
             match keycode {
                 KeyCode::Return =>  {
@@ -553,11 +553,11 @@ impl State for GameState {
     }
 }
 
-fn text_center_position(ctx: &mut Context, bounds: &Rect, text: &Text) -> Point2<f32> {
+fn text_center_position(ctx: &mut Context, bounds: &Rect, text: &Text) -> Vec2f {
     let x = bounds.x + (bounds.w - text.width(ctx) as f32) / 2.0;
     let y = bounds.y + (bounds.h - text.height(ctx) as f32) / 2.0;
 
-    Point2 {
+    Vec2f {
         x,
         y,
     }

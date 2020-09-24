@@ -1,4 +1,4 @@
-use crate::ggwp::{
+use crate::engine::{
     GameResult, GameError, Context,
     graphics::{Vtx, DrawParam, Image},
 };

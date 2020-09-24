@@ -20,7 +20,7 @@ impl WindowSetup {
 impl Default for WindowSetup {
     fn default() -> WindowSetup {
         WindowSetup {
-           title: "ggwp window".to_owned(),
+           title: "engine window".to_owned(),
            icon: None
         }
     }

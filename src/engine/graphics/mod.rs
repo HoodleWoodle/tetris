@@ -1,6 +1,6 @@
-use crate::ggwp::{
+use crate::engine::{
     GameResult, Context,
-    mint::Point2,
+    vec::Vec2f,
 };
 use glium::{
     DrawParameters,
@@ -109,8 +109,8 @@ impl<'a> DrawCall<'a> {
 #[derive(Copy, Clone)]
 pub struct DrawParam {
     pub src: Rect,
-    pub dest: Point2<f32>,
-    pub size: Option<Point2<f32>>,
+    pub dest: Vec2f,
+    pub size: Option<Vec2f>,
     pub color: Color,
 }
 
@@ -122,13 +122,13 @@ impl DrawParam {
 
     pub fn dest<P>(mut self, dest: P) -> Self
     where
-        P: Into<Point2<f32>>
+        P: Into<Vec2f>
     {
         self.dest = dest.into();
         self
     }
     
-    pub fn size(mut self, size: Option<Point2<f32>>) -> Self {
+    pub fn size(mut self, size: Option<Vec2f>) -> Self {
         self.size = size;
         self
     }
@@ -143,7 +143,7 @@ impl Default for DrawParam {
     fn default() -> DrawParam {
         DrawParam {
             src: Rect::new(0.0, 0.0, 1.0, 1.0),
-            dest: Point2 { x: 0.0, y: 0.0 },
+            dest: Vec2f { x: 0.0, y: 0.0 },
             color: WHITE,
             size: None,
         }

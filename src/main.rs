@@ -3,7 +3,7 @@
 #[macro_use]
 extern crate glium;
 
-use crate::ggwp::{
+use crate::engine::{
     conf::{WindowMode, WindowSetup},
     event,
     ContextBuilder,
@@ -15,7 +15,7 @@ use std::{
     path,
 };
 
-mod ggwp;
+mod engine;
 mod tetrimino;
 mod settings;
 mod random;
@@ -88,7 +88,7 @@ fn main() {
         .window_setup(window_setup)
         .window_mode(window_mode)
         .build()
-        .expect("Could not create ggwp context!");
+        .expect("Could not create engine context!");
 
     let mut handler = StateHandler::new(&mut ctx, settings)
         .expect("Could not create state handler!");

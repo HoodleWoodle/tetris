@@ -1,6 +1,6 @@
-use crate::ggwp::{
+use crate::engine::{
     GameResult, Context,
-    mint::Point2,
+    vec::{Vec2f, Vec2i, Vec2u},
     graphics::{
         self, DrawParam, Color, Image, Rect,
         spritebatch::SpriteBatch,
@@ -64,14 +64,14 @@ impl FontData {
                 let glyph = self.face.glyph();
                 let bitmap = glyph.bitmap();
                 let y_offset = glyph.bitmap_top();
-                let size = Point2::new(bitmap.width(), bitmap.rows());
+                let size = Vec2i::new(bitmap.width(), bitmap.rows());
 
                 // save result temporarily
-                let temp = packer.pack(bitmap.buffer(), Point2::new(size.x as u32, size.y as u32));
+                let temp = packer.pack(bitmap.buffer(), Vec2u::new(size.x as u32, size.y as u32));
 
                 glyphs.push(Glyph {
                     advance: glyph.advance().x >> 6,
-                    offset: Point2::new(glyph.bitmap_left(), y_offset),
+                    offset: Vec2i::new(glyph.bitmap_left(), y_offset),
                     size,
                     uv: Rect::new(temp.x as f32, temp.y as f32, 0.0, 0.0),
                 });
@@ -90,7 +90,7 @@ impl FontData {
                 glyph.offset.y = y_bearing_max - glyph.offset.y;
 
                 // update uv coordinates
-                let origin = Point2::new(glyph.uv.x, glyph.uv.y);
+                let origin = Vec2f::new(glyph.uv.x, glyph.uv.y);
                 glyph.uv.x = origin.x / (packed_size.x as f32);
                 glyph.uv.y = origin.y / (packed_size.y as f32);
 
@@ -127,8 +127,8 @@ struct ScaledFontData {
 
 struct Glyph {
     advance: i32,
-    offset: Point2<i32>,
-    size: Point2<i32>,
+    offset: Vec2i,
+    size: Vec2i,
     uv: Rect,
 }
 
@@ -210,7 +210,7 @@ impl Text {
         self
     }
     
-    fn size(&self, ctx: &mut Context) -> (u32, u32) {
+    fn size(&self, ctx: &mut Context) -> Vec2u {
         match self.font {
             Some(font) => {
                 let data = font.data(ctx).unwrap();
@@ -235,30 +235,30 @@ impl Text {
                     }
                 }
 
-                (w as u32, h as u32)
+                Vec2u::new(w as u32, h as u32)
             },
-            None => (0, 0),
+            None => Vec2u::new(0, 0),
         }
     }
 
     pub fn width(&self, ctx: &mut Context) -> u32 {
-        self.size(ctx).0
+        self.size(ctx).x
     }
 
     pub fn height(&self, ctx: &mut Context) -> u32 {
-        self.size(ctx).1
+        self.size(ctx).y
     }
 }
 
 #[derive(Clone)]
 pub struct QueuedText {
     text: Text,
-    relative_dest: Point2<f32>,
+    relative_dest: Vec2f,
     color: Color,
 }
 
 impl QueuedText {
-    fn new(text: &Text, relative_dest: Point2<f32>, color: Color) -> QueuedText {
+    fn new(text: &Text, relative_dest: Vec2f, color: Color) -> QueuedText {
         QueuedText {
             text: text.clone(),
             relative_dest,
@@ -276,7 +276,7 @@ pub enum FilterMode {
 
 pub fn queue_text<P>(ctx: &mut Context, batch: &Text, relative_dest: P, color: Option<Color>)
 where
-    P: Into<Point2<f32>>,
+    P: Into<Vec2f>,
 {
     let relative_dest = relative_dest.into();
     let color = color.unwrap_or(graphics::WHITE);

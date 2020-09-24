@@ -1,5 +1,5 @@
-use crate::ggwp::{
-    mint::Point2,
+use crate::engine::{
+    vec::Vec2f,
     graphics::spritebatch::SpriteBatch,
 };
 use std::ops::Index;
@@ -65,6 +65,14 @@ impl Map {
 
     pub fn collision(&self, tet: &Tetrimino) -> bool {
         for &tile in tet.tiles.iter() {
+            // Note: float casting can currently result in undefined behavior (so this check is temporary)
+            let x = tet.pos.x + tile.x;
+            let y = tet.pos.y + tile.y;
+
+            if x < 0.0 || y < 0.0 {
+                return true;
+            }
+
             let x = (tet.pos.x + tile.x).round() as usize;
             let y = (tet.pos.y + tile.y).round() as usize;
 
@@ -135,10 +143,10 @@ impl Map {
         }
     }
     
-    pub fn draw(&self, settings: &Settings, batch: &mut SpriteBatch, level: usize, map_position: &Point2<f32>) {
+    pub fn draw(&self, settings: &Settings, batch: &mut SpriteBatch, level: usize, map_position: &Vec2f) {
         for y in 0..settings::MAP_HEIGHT {
             for x in 0..settings::MAP_WIDTH {
-                let pos = Point2::new(x as f32, y as f32);
+                let pos = Vec2f::new(x as f32, y as f32);
                 self.tiles[y * settings::MAP_WIDTH + x].draw_map(settings, batch, level, map_position, pos);
             }
         }

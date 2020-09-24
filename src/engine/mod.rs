@@ -1,4 +1,4 @@
-use crate::ggwp::{
+use crate::engine::{
     conf::{WindowSetup, WindowMode},
     graphics::{
         text::{FontData, QueuedText},
@@ -30,7 +30,7 @@ pub mod conf;
 pub mod event;
 pub mod graphics;
 pub mod input;
-pub mod mint;
+pub mod vec;
 pub mod timer;
 pub mod util;
 pub mod texture_packer;

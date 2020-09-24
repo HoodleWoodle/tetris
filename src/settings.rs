@@ -2,9 +2,9 @@ use serde::Deserialize;
 use serde_json::Result;
 use std::io::Read;
 use crate::random::RandomGeneratorType;
-use crate::ggwp::{
+use crate::engine::{
     graphics::{Rect, Color},
-    mint::Point2,
+    vec::Vec2f,
 };
 
 pub const MAP_WIDTH: usize = 10;
@@ -72,7 +72,7 @@ pub struct Settings {
     pub lines_bounds: [Rect; 2],
     pub level_bounds: [Rect; 2],
     pub next_bounds: [Rect; 2],
-    pub map_positions: [Point2<f32>; 2],
+    pub map_positions: [Vec2f; 2],
 }
 
 impl Settings {

@@ -1,7 +1,7 @@
-use crate::ggwp::{
+use crate::engine::{
     GameResult, Context,
     graphics::{Drawable, Image, DrawParam, DrawCall},
-    mint::Point2,
+    vec::Vec2f,
     util
 };
 use glium::{
@@ -40,7 +40,7 @@ impl Drawable for SpriteBatch {
         let mut indices = Vec::with_capacity(self.draw_params.len() * 6);
 
         for draw_param in self.draw_params.iter() {
-            let dest = Point2::new(param.dest.x + draw_param.dest.x, param.dest.y + draw_param.dest.y);
+            let dest = Vec2f::new(param.dest.x + draw_param.dest.x, param.dest.y + draw_param.dest.y);
             let color = param.color.combine(draw_param.color);
             let p = DrawParam::default()
                 .color(color)

@@ -1,6 +1,6 @@
-use crate::ggwp::{
+use crate::engine::{
     timer,
-    event::{EventHandler, KeyCode, KeyMods},
+    event::{EventHandler, KeyCode},
     graphics::{self, Image, Font},
     audio::{Source, SoundSource},
     Context, GameResult,
@@ -28,7 +28,7 @@ pub trait State {
     fn update(&mut self, ctx: &mut Context, settings: &Settings) -> GameResult<StateID>;
     fn draw(&mut self, ctx: &mut Context, settings: &Settings, res: &Resources) -> GameResult<()>;
 
-    fn key_down_event(&mut self, _ctx: &mut Context, settings: &Settings, keycode: KeyCode, _keymods: KeyMods, repeat: bool) -> StateID;
+    fn key_down_event(&mut self, _ctx: &mut Context, settings: &Settings, keycode: KeyCode, repeat: bool) -> StateID;
 }
 
 pub struct Resources {
@@ -125,7 +125,7 @@ impl EventHandler for StateHandler {
         graphics::present(ctx)
     }
 
-    fn key_down_event(&mut self, ctx: &mut Context, keycode: KeyCode, keymods: KeyMods, repeat: bool) {
-        self.state.key_down_event(ctx, &self.settings, keycode, keymods, repeat);
+    fn key_down_event(&mut self, ctx: &mut Context, keycode: KeyCode, repeat: bool) {
+        self.state.key_down_event(ctx, &self.settings, keycode, repeat);
     }
 }

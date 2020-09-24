@@ -1,4 +1,4 @@
-use crate::ggwp::{GameResult, GameError, Context};
+use crate::engine::{GameResult, GameError, Context};
 
 use glium::{
     Surface,
@@ -15,14 +15,10 @@ pub trait EventHandler {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()>;
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()>;
 
-    fn key_down_event(&mut self, ctx: &mut Context, keycode: KeyCode, keymods: KeyMods, repeat: bool);
+    fn key_down_event(&mut self, ctx: &mut Context, keycode: KeyCode, repeat: bool);
 }
 
 pub use glium::glutin::event::VirtualKeyCode as KeyCode;
-
-pub enum KeyMods {
-    NotImplemented
-}
 
 fn handle<S>(ctx: &mut Context, handler: &mut S, event: Event<'_, ()>, _: &EventLoopWindowTarget<()>, control_flow: &mut ControlFlow) -> GameResult<()>
 where
@@ -41,7 +37,7 @@ where
 
                     if state == ElementState::Pressed {
                         let repeat = ctx.key_states[index];
-                        handler.key_down_event(ctx, keycode, KeyMods::NotImplemented, repeat);
+                        handler.key_down_event(ctx, keycode, repeat);
                     }
 
                     ctx.key_states[index] = state == ElementState::Pressed;
